@@ -101,11 +101,11 @@ const AppContent = () => {
         }
       />
 
-      {/* Ruta por defecto - redirige a dashboard o login */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Ruta por defecto - lleva al login; ProtectedRoute decide si entra al dashboard */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* 404 */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

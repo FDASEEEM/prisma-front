@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import storageUtils from '../utils/localStorage';
+import { resetAuthRedirectLock } from '../services/authSession';
 
 const AuthContext = createContext();
 
@@ -19,6 +20,7 @@ export const AuthProvider = ({ children }) => {
     if (storedUser && storageUtils.getToken()) {
       setUser(storedUser);
       setIsAuthenticated(true);
+      resetAuthRedirectLock();
     }
     setIsLoading(false);
   }, []);
@@ -29,12 +31,14 @@ export const AuthProvider = ({ children }) => {
     storageUtils.saveRefreshToken(tokens.refresh_token);
     setUser(userData);
     setIsAuthenticated(true);
+    resetAuthRedirectLock();
   };
 
   const logout = () => {
     storageUtils.clearSession();
     setUser(null);
     setIsAuthenticated(false);
+    resetAuthRedirectLock();
   };
 
   const updateUser = (updatedData) => {

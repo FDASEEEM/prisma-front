@@ -5,6 +5,10 @@
 
 import api from './api';
 import { AUTH_ENDPOINTS } from '../constants/api';
+import {
+  getAuthErrorMessage,
+  isInvalidCredentialsError,
+} from './authErrors';
 
 const authService = {
   /**
@@ -28,7 +32,13 @@ const authService = {
       };
     } catch (error) {
       if (error.response?.status === 401) {
-        throw new Error('Correo o contraseña incorrectos');
+        if (isInvalidCredentialsError(error.response?.data)) {
+          throw new Error('Correo o contraseña incorrectos');
+        }
+
+        throw new Error(
+          getAuthErrorMessage(error.response?.data, 'Tu sesión expiró. Vuelve a iniciar sesión.'),
+        );
       }
       throw new Error(error.response?.data?.message || 'Error al iniciar sesión');
     }
@@ -93,6 +103,10 @@ const authService = {
         refresh_token: newRefreshToken || refreshToken,
       };
     } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
+      }
+
       throw new Error('No se pudo renovar la sesión');
     }
   },

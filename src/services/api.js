@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import storageUtils from '../utils/localStorage';
+import { handleAuthFailure } from './authSession';
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001',
@@ -32,31 +33,11 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const errorResponse = error.response?.data;
+    const requestUrl = originalRequest?.url || '';
 
-    // Si es 401 y no es un request de refresh, intentar refrescar token
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = storageUtils.getRefreshToken();
-        if (refreshToken) {
-          const response = await axios.post(
-            `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001'}/api/auth/refresh`,
-            { refresh_token: refreshToken }
-          );
-
-          const { access_token } = response.data;
-          storageUtils.saveToken(access_token);
-
-          // Reintentar request original con nuevo token
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        // Si falla el refresh, limpiar sesión
-        storageUtils.clearSession();
-        window.location.href = '/login';
-      }
+    if (error.response?.status === 401) {
+      handleAuthFailure(errorResponse, requestUrl);
     }
 
     return Promise.reject(error);
