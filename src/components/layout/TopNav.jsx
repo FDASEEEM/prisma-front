@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import authService from '../../services/authService';
 import Button from '../ui/Button';
 
 const TopNav = ({ title = 'Aula Orgánica' }) => {
@@ -13,10 +14,14 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-    setIsProfileOpen(false);
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      logout();
+      navigate('/login', { replace: true });
+      setIsProfileOpen(false);
+    }
   };
 
   const handleProfileClick = () => {
