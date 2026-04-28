@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
+import { useActiveSession } from '../context/ActiveSessionContext';
 import { Button, Alert } from '../components/ui';
 import jobsService from '../services/jobsService';
 
@@ -89,6 +90,7 @@ const StepIndicator = ({ currentStep }) => (
 
 const NuevaSesionPage = () => {
   const navigate = useNavigate();
+  const { startTracking } = useActiveSession();
   const [step, setStep] = useState(1);
   const [paciFile, setPaciFile] = useState(null);
   const [planningFile, setPlanningFile] = useState(null);
@@ -108,6 +110,7 @@ const NuevaSesionPage = () => {
     setError(null);
     try {
       const result = await jobsService.createJob(paciFile, planningFile, prompt.trim());
+      startTracking(result.jobId);
       navigate(`/sesion/${result.jobId}`);
     } catch (err) {
       setError(err.message);

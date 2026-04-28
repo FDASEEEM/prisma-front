@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import chatService from '../services/chatService';
 import { CHAT_ENDPOINTS } from '../constants/api';
+import { useActiveSession } from '../context/ActiveSessionContext';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
@@ -165,6 +166,7 @@ const PHASE_CONFIG = {
 const SesionPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { startTracking } = useActiveSession();
 
   const [phase, setPhase] = useState('running');
   const [workflowStatus, setWorkflowStatus] = useState(null);
@@ -274,6 +276,9 @@ const SesionPage = () => {
 
         // No conectar SSE si la sesión ya terminó
         if (state.phase === 'completed' || state.phase === 'error') return;
+
+        // Registrar en contexto global (soporte para page refresh)
+        startTracking(sessionId);
 
         connectToSSE();
       } catch (err) {

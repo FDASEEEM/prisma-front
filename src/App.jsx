@@ -6,6 +6,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ActiveSessionProvider } from './context/ActiveSessionContext';
+import FloatingSessionIndicator from './components/ui/FloatingSessionIndicator';
+import SessionToast from './components/ui/SessionToast';
 
 // Páginas
 import LoginPage from './pages/LoginPage';
@@ -118,7 +121,11 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
+        <ActiveSessionProvider>
+          <AppContent />
+          <FloatingSessionIndicator />
+          <SessionToast />
+        </ActiveSessionProvider>
       </AuthProvider>
     </BrowserRouter>
   );
