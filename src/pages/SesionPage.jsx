@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import chatService from '../services/chatService';
@@ -171,27 +171,107 @@ const SesionPage = () => {
   const [messages, setMessages] = useState([]);
   const [hitlData, setHitlData] = useState(null);
   const [error, setError] = useState(null);
+  const [currentStep, setCurrentStep] = useState('');
   const bottomRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
+  // ── Manejador de eventos SSE ──────────────────────────────────────────────
+  const handleSSEEvent = useCallback((event) => {
+    const data = JSON.parse(event.data);
+
+    // Ignorar keepalives
+    if (data.type === 'ping') return;
+
+    switch (data.type) {
+      case 'agent_start':
+        // Mostrar qué agente está corriendo
+        setCurrentStep(data.message);
+        break;
+
+      case 'agent_end':
+        setCurrentStep('');
+        break;
+
+      case 'message':
+        // Agregar al historial de chat
+        setMessages(prev => [...prev, { role: data.role, content: data.content }]);
+        break;
+
+      case 'hitl_required':
+        // El docente debe revisar
+        setHitlData(data.hitl_data);
+        setPhase('awaiting_hitl');
+        break;
+
+      case 'completed':
+        // Flujo completado
+        setPhase('completed');
+        setWorkflowStatus(data.workflow_status);
+        setCurrentStep('');
+        break;
+
+      case 'error':
+        // Error terminal
+        setPhase('error');
+        setError(data.message);
+        setCurrentStep('');
+        break;
+
+      default:
+        console.warn('Evento SSE desconocido:', data.type);
+    }
+  }, []);
+
+  // ── Conectar a SSE ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== 'running') return;
-
-    const interval = setInterval(async () => {
+    // Cargar estado inicial (para hidratación en refresh)
+    const hydrate = async () => {
       try {
-        const data = await chatService.getSessionState(sessionId);
-        setMessages(data.messages || []);
-        if (data.hitl_data) setHitlData(data.hitl_data);
-        if (data.error) setError(data.error);
-        setWorkflowStatus(data.workflow_status || null);
-        setPhase(data.phase);
+        const state = await chatService.getSessionState(sessionId);
+        setMessages(state.messages || []);
+        if (state.hitl_data) setHitlData(state.hitl_data);
+        if (state.error) setError(state.error);
+        setWorkflowStatus(state.workflow_status || null);
+        setPhase(state.phase);
+
+        // Si ya está terminado, no conectar SSE
+        if (state.phase === 'completed' || state.phase === 'error') {
+          return;
+        }
+
+        // Conectar a SSE si está en curso o esperando HITL
+        connectToSSE();
       } catch (err) {
         setError(err.message);
         setPhase('error');
       }
-    }, 2000);
+    };
 
-    return () => clearInterval(interval);
-  }, [phase, sessionId]);
+    const connectToSSE = () => {
+      const url = CHAT_ENDPOINTS.STREAM(sessionId);
+      const source = new EventSource(url);
+      eventSourceRef.current = source;
+
+      source.onmessage = handleSSEEvent;
+
+      source.onerror = () => {
+        source.close();
+        // Si el stream cerró inesperadamente, sincronizar estado
+        // Verificar el estado actual antes de reconectar
+        if (eventSourceRef.current?.readyState !== 2) {
+          setTimeout(() => hydrate(), 1000);
+        }
+      };
+    };
+
+    hydrate();
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, [sessionId, handleSSEEvent]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -262,7 +342,7 @@ const SesionPage = () => {
             {phase === 'running' && (
               <div className="flex items-center gap-2 text-stone-400 text-sm pt-2 pl-1">
                 <Spinner />
-                <span>El agente está procesando...</span>
+                <span>{currentStep || 'El agente está procesando...'}</span>
               </div>
             )}
 

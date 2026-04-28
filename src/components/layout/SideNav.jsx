@@ -25,7 +25,7 @@ const SideNav = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex flex-col p-8 space-y-4 h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 bg-stone-50 dark:bg-stone-950 shadow-2xl shadow-stone-900/10">
+      <nav className="hidden md:flex flex-col p-8 space-y-4 h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 bg-stone-50 dark:bg-stone-950 shadow-2xl shadow-stone-900/10 border-r border-stone-200/50 dark:border-stone-800/50">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">

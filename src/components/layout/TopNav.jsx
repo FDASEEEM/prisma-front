@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
-import Button from '../ui/Button';
+import UserAvatar from '../ui/UserAvatar';
 
 const TopNav = ({ title = 'Aula Orgánica' }) => {
   const { user, logout } = useAuth();
@@ -30,7 +30,7 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 md:pl-72">
+    <header className="sticky top-0 left-0 right-0 z-30 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 border-b border-stone-200/50 dark:border-stone-800/50 transition-all duration-300">
       <div className="flex justify-between items-center px-6 md:px-10 h-full w-full">
         {/* Logo - Mobile only */}
         <div className="md:hidden">
@@ -59,13 +59,9 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 p-1 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 rounded-full transition-all duration-300"
+              className="flex items-center gap-2 p-1 hover:opacity-80 dark:hover:opacity-80 rounded-full transition-all duration-300"
             >
-              <img
-                alt="Profile"
-                src={user?.avatar || 'https://via.placeholder.com/32'}
-                className="w-8 h-8 rounded-full object-cover shadow-sm"
-              />
+              <UserAvatar name={user?.nombre || 'Usuario'} size="sm" />
             </button>
 
             {/* Profile Dropdown Menu */}

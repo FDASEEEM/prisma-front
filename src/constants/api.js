@@ -18,6 +18,7 @@ export const AUTH_ENDPOINTS = {
 export const CHAT_ENDPOINTS = {
   START: `${CHAT_API_URL}/chat/start`,
   STATE: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/state`,
+  STREAM: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/stream`,
   HITL: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/hitl`,
   DOWNLOAD: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/download`,
   HEALTH: `${CHAT_API_URL}/health`,
