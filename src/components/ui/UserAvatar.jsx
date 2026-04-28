@@ -3,18 +3,19 @@
  * Avatar del usuario con iniciales o imagen
  */
 
+import React from 'react';
+
 const UserAvatar = ({ name = 'Usuario', size = 'md', className = '' }) => {
-  // Extraer iniciales del nombre
   const getInitials = (fullName) => {
     return fullName
       .split(' ')
+      .filter(Boolean)
       .slice(0, 2)
       .map(word => word[0])
       .join('')
       .toUpperCase();
   };
 
-  // Generar color consistente basado en el nombre
   const getColorClass = (fullName) => {
     const colors = [
       'bg-blue-500',
@@ -28,8 +29,8 @@ const UserAvatar = ({ name = 'Usuario', size = 'md', className = '' }) => {
       'bg-cyan-500',
       'bg-indigo-500',
     ];
-    const charCode = fullName.charCodeAt(0);
-    return colors[charCode % colors.length];
+    const hash = [...fullName].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
   };
 
   const sizeClasses = {
@@ -43,15 +44,7 @@ const UserAvatar = ({ name = 'Usuario', size = 'md', className = '' }) => {
 
   return (
     <div
-      className={`
-        ${sizeClasses[size]}
-        ${bgColor}
-        rounded-full
-        flex items-center justify-center
-        font-bold text-white
-        shadow-sm
-        ${className}
-      `}
+      className={`${sizeClasses[size]} ${bgColor} rounded-full flex items-center justify-center font-bold text-white shadow-sm ${className}`}
       title={name}
     >
       {initials}
