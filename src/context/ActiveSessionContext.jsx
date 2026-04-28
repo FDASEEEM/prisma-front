@@ -24,7 +24,9 @@ export const ActiveSessionProvider = ({ children }) => {
       eventSourceRef.current = null;
     }
     cancelledRef.current = false;
-    setActiveSession({ sessionId, phase: 'running', workflowStatus: null, currentStep: '', error: null });
+    const initial = { sessionId, phase: 'running', workflowStatus: null, currentStep: '', error: null };
+    console.log('[ActiveSession] startTracking:', initial);
+    setActiveSession(initial);
 
     const source = new EventSource(CHAT_ENDPOINTS.STREAM(sessionId));
     eventSourceRef.current = source;
