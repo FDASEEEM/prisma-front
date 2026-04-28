@@ -40,7 +40,7 @@ export const ActiveSessionProvider = ({ children }) => {
       setActiveSession(prev => {
         if (!prev) return prev;
         switch (data.type) {
-          case 'agent_start':   return { ...prev, currentStep: data.message };
+          case 'agent_start':   return { ...prev, phase: 'running', currentStep: data.message };
           case 'agent_end':     return { ...prev, currentStep: '' };
           case 'hitl_required': return { ...prev, phase: 'awaiting_hitl', currentStep: '' };
           case 'completed':
