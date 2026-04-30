@@ -14,13 +14,13 @@ const MainContainer = ({ children, title = 'Aula Orgánica' }) => {
       {/* SideNav - Fixed left sidebar (hidden on mobile) */}
       <SideNav />
 
-      {/* Main column: TopNav + Content */}
-      <div className="flex flex-col min-h-screen">
+      {/* Main column offset by sidebar width so sticky TopNav doesn't cover SideNav */}
+      <div className="flex flex-col min-h-screen md:ml-72">
         {/* TopNav - Sticky top */}
         <TopNav title={title} />
 
         {/* Main Content */}
-        <main className="flex-1 pt-16 pb-8 px-6 md:px-10 lg:px-12 md:ml-72">
+        <main className="flex-1 pt-4 pb-8 px-6 md:px-10 lg:px-12">
           {children}
         </main>
       </div>

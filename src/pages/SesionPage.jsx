@@ -166,6 +166,7 @@ const PHASE_CONFIG = {
 const SesionPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { startTracking } = useActiveSession();
 
   const [phase, setPhase] = useState('running');
   const [workflowStatus, setWorkflowStatus] = useState(null);
@@ -178,14 +179,18 @@ const SesionPage = () => {
 
   // ── Manejador de eventos SSE ──────────────────────────────────────────────
   const handleSSEEvent = useCallback((event) => {
-    const data = JSON.parse(event.data);
+    // Guard: el servidor puede enviar pings vacíos o payloads malformados
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch {
+      return;
+    }
 
-    // Ignorar keepalives
     if (data.type === 'ping') return;
 
     switch (data.type) {
       case 'agent_start':
-        // Mostrar qué agente está corriendo
         setCurrentStep(data.message);
         break;
 
@@ -194,25 +199,21 @@ const SesionPage = () => {
         break;
 
       case 'message':
-        // Agregar al historial de chat
         setMessages(prev => [...prev, { role: data.role, content: data.content }]);
         break;
 
       case 'hitl_required':
-        // El docente debe revisar
         setHitlData(data.hitl_data);
         setPhase('awaiting_hitl');
         break;
 
       case 'completed':
-        // Flujo completado
         setPhase('completed');
         setWorkflowStatus(data.workflow_status);
         setCurrentStep('');
         break;
 
       case 'error':
-        // Error terminal
         setPhase('error');
         setError(data.message);
         setCurrentStep('');
@@ -225,24 +226,20 @@ const SesionPage = () => {
 
   // ── Conectar a SSE ────────────────────────────────────────────────────────
   useEffect(() => {
-    // Cargar estado inicial (para hidratación en refresh)
-    const hydrate = async () => {
+    let cancelled = false;
+
+    // Sync de estado puntual — se usa en hidratación y como fallback si el stream cierra
+    const syncState = async () => {
       try {
         const state = await chatService.getSessionState(sessionId);
+        if (cancelled) return;
         setMessages(state.messages || []);
         if (state.hitl_data) setHitlData(state.hitl_data);
         if (state.error) setError(state.error);
         setWorkflowStatus(state.workflow_status || null);
         setPhase(state.phase);
-
-        // Si ya está terminado, no conectar SSE
-        if (state.phase === 'completed' || state.phase === 'error') {
-          return;
-        }
-
-        // Conectar a SSE si está en curso o esperando HITL
-        connectToSSE();
       } catch (err) {
+        if (cancelled) return;
         setError(err.message);
         setPhase('error');
       }
@@ -258,20 +255,48 @@ const SesionPage = () => {
       source.onmessage = handleSSEEvent;
 
       source.onerror = () => {
+        // El stream cerró inesperadamente — sincronizar estado una vez, sin reconectar
+        // El backend cierra limpiamente en eventos terminales; si cerró por error de red,
+        // el GET /state devuelve el estado actual y el usuario puede refrescar si necesita.
         source.close();
-        // Si el stream cerró inesperadamente, sincronizar estado
-        // Verificar el estado actual antes de reconectar
-        if (eventSourceRef.current?.readyState !== 2) {
-          setTimeout(() => hydrate(), 1000);
-        }
+        eventSourceRef.current = null;
+        if (!cancelled) syncState();
       };
+    };
+
+    // Hidratación inicial: leer estado actual, luego conectar SSE si no está terminado
+    const hydrate = async () => {
+      try {
+        const state = await chatService.getSessionState(sessionId);
+        if (cancelled) return;
+
+        setMessages(state.messages || []);
+        if (state.hitl_data) setHitlData(state.hitl_data);
+        if (state.error) setError(state.error);
+        setWorkflowStatus(state.workflow_status || null);
+        setPhase(state.phase);
+
+        // No conectar SSE si la sesión ya terminó
+        if (state.phase === 'completed' || state.phase === 'error') return;
+
+        // Registrar en contexto global (soporte para page refresh)
+        startTracking(sessionId);
+
+        connectToSSE();
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.message);
+        setPhase('error');
+      }
     };
 
     hydrate();
 
     return () => {
+      cancelled = true;
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     };
   }, [sessionId, handleSSEEvent]);

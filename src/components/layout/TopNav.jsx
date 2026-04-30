@@ -59,7 +59,7 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 p-1 hover:opacity-80 dark:hover:opacity-80 rounded-full transition-all duration-300"
+              className="flex items-center gap-2 p-1 hover:opacity-80 rounded-full transition-all duration-300"
             >
               <UserAvatar name={user?.nombre || 'Usuario'} size="sm" />
             </button>
