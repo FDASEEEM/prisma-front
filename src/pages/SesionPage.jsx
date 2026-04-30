@@ -174,6 +174,7 @@ const SesionPage = () => {
   const [hitlData, setHitlData] = useState(null);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState('');
+  const [downloading, setDownloading] = useState(false);
   const bottomRef = useRef(null);
   const eventSourceRef = useRef(null);
 
@@ -380,14 +381,14 @@ const SesionPage = () => {
                 <p className="text-green-700 dark:text-green-400 text-sm text-center font-medium">
                   Rúbrica generada y validada por el evaluador interno.
                 </p>
-                <a
-                  href={CHAT_ENDPOINTS.DOWNLOAD(sessionId)}
-                  download
-                  className="inline-flex items-center gap-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
+                <button
+                  onClick={async () => { setDownloading(true); try { await chatService.downloadResult(sessionId); } finally { setDownloading(false); } }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-2 bg-lime-600 hover:bg-lime-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
                 >
-                  <span className="material-symbols-outlined text-base">download</span>
+                  {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
-                </a>
+                </button>
               </div>
             )}
 
@@ -401,14 +402,14 @@ const SesionPage = () => {
                     <strong>Revise el documento antes de usarlo.</strong>
                   </span>
                 </div>
-                <a
-                  href={CHAT_ENDPOINTS.DOWNLOAD(sessionId)}
-                  download
-                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
+                <button
+                  onClick={async () => { setDownloading(true); try { await chatService.downloadResult(sessionId); } finally { setDownloading(false); } }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
                 >
-                  <span className="material-symbols-outlined text-base">download</span>
+                  {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
-                </a>
+                </button>
               </div>
             )}
 
