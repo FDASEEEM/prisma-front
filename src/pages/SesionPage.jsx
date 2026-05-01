@@ -4,6 +4,7 @@ import MainContainer from '../components/layout/MainContainer';
 import chatService from '../services/chatService';
 import { CHAT_ENDPOINTS } from '../constants/api';
 import storageUtils from '../utils/localStorage';
+import { useActiveSession } from '../context/ActiveSessionContext';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
