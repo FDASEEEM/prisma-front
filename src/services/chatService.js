@@ -9,7 +9,7 @@ import storageUtils from '../utils/localStorage';
 import { handleAuthFailure } from './authSession';
 
 const chatApi = axios.create({
-  baseURL: import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_CHAT_API_URL ?? '',
 });
 
 // Inyectar el JWT de Supabase en cada request al backend de agentes
@@ -96,20 +96,11 @@ const chatService = {
   /**
    * Download Result - Descarga el archivo generado
    */
-  downloadResult: async (sessionId, filename = 'resultado.docx') => {
+  downloadResult: async (sessionId) => {
     try {
-      const response = await chatApi.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId), {
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-
+      const response = await chatApi.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId));
+      const { url } = response.data;
+      window.open(url, '_blank');
       return { success: true };
     } catch (error) {
       if (error.response?.status === 404) {

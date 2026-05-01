@@ -5,7 +5,7 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000';
-const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8000';
+const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? '';
 
 export const AUTH_ENDPOINTS = {
   REGISTER: `${API_BASE_URL}/api/auth/register`,

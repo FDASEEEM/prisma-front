@@ -1,9 +1,9 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveSession } from '../../context/ActiveSessionContext';
-import { CHAT_ENDPOINTS } from '../../constants/api';
+import chatService from '../../services/chatService';
 
-const TOAST_DURATION = 12000;
+const ERROR_TOAST_DURATION = 12000;
 
 const SessionToast = () => {
   const { activeSession, stopTracking } = useActiveSession();
@@ -18,24 +18,36 @@ const SessionToast = () => {
     if (isTerminal) setVisible(true);
   }, [isTerminal]);
 
+  // Mostrar inmediatamente si se restauró un estado terminal desde localStorage
   useEffect(() => {
-    if (!visible) return;
+    if (isTerminal) setVisible(true);
+  }, []);
+
+  // Auto-dismiss solo para errores — los completados quedan hasta que el profesor los visite
+  useEffect(() => {
+    if (!visible || isSuccess) return;
     setProgress(100);
     const start = Date.now();
     const interval = setInterval(() => {
       const elapsed = Date.now() - start;
-      const remaining = Math.max(0, 100 - (elapsed / TOAST_DURATION) * 100);
+      const remaining = Math.max(0, 100 - (elapsed / ERROR_TOAST_DURATION) * 100);
       setProgress(remaining);
       if (remaining === 0) { clearInterval(interval); handleDismiss(); }
     }, 50);
     return () => clearInterval(interval);
-  }, [visible]);
+  }, [visible, isSuccess]);
 
   if (!visible || !activeSession) return null;
 
   const handleDismiss = () => { setVisible(false); stopTracking(); };
   const handleGoToSession = () => { navigate(`/sesion/${activeSession.sessionId}`); handleDismiss(); };
-  const handleDownload = () => { window.open(CHAT_ENDPOINTS.DOWNLOAD(activeSession.sessionId), '_blank'); };
+  const handleDownload = async () => {
+    try {
+      await chatService.downloadResult(activeSession.sessionId);
+    } catch (err) {
+      console.error('Error al descargar:', err);
+    }
+  };
 
   return (
     <div className={`fixed bottom-6 right-6 z-50 w-80 rounded-2xl shadow-2xl overflow-hidden ${isSuccess ? 'bg-white dark:bg-stone-900 border border-lime-200 dark:border-lime-800' : 'bg-white dark:bg-stone-900 border border-red-200 dark:border-red-800'}`}>
