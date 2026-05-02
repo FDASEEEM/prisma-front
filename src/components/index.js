@@ -11,6 +11,7 @@ export {
   Badge,
   Alert,
   Spinner,
+  Modal,
 } from './ui';
 
 // Layout Components
@@ -19,3 +20,16 @@ export {
   TopNav,
   MainContainer,
 } from './layout';
+
+// Feature Components
+export {
+  default as CreatePACIModal,
+} from './features/CreatePACIModal';
+
+export {
+  default as EditPACIModal,
+} from './features/EditPACIModal';
+
+export {
+  default as ViewPACIModal,
+} from './features/ViewPACIModal';
