@@ -5,7 +5,7 @@
 
 import api from './api';
 
-const PACI_BASE_URL = process.env.REACT_APP_API_PERFIL_ALUMNO_URL || 'http://localhost:3000';
+const PACI_BASE_URL = import.meta.env.VITE_API_PERFIL_ALUMNO_URL || 'http://localhost:3000';
 
 const paciApi = api.create({
   baseURL: PACI_BASE_URL,
