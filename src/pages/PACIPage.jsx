@@ -52,7 +52,7 @@ const PACIPage = () => {
         default:
           data = await paciService.getActivePACIs();
       }
-      setPacis(data);
+      setPacis(Array.isArray(data) ? data : (data?.data ?? data?.items ?? []));
     } catch (err) {
       setError(err.message || 'Error al cargar perfiles PACI');
     } finally {
@@ -72,7 +72,7 @@ const PACIPage = () => {
         toDate: filters.toDate || undefined,
       };
       const data = await paciService.getAllPACIs(filterData);
-      setPacis(data);
+      setPacis(Array.isArray(data) ? data : (data?.data ?? data?.items ?? []));
     } catch (err) {
       setError(err.message || 'Error al filtrar perfiles PACI');
     } finally {
