@@ -30,8 +30,8 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
   };
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-30 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 border-b border-stone-200/50 dark:border-stone-800/50 transition-all duration-300">
-      <div className="flex justify-between items-center px-6 md:px-10 h-full w-full">
+    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 border-b border-stone-200/50 dark:border-stone-800/50 transition-all duration-300">
+      <div className="flex justify-between items-center px-6 md:pl-72 md:pr-10 h-full w-full">
         {/* Logo - Mobile only */}
         <div className="md:hidden">
           <img 

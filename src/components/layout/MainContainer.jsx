@@ -15,7 +15,7 @@ const MainContainer = ({ children, title = 'Aula Orgánica' }) => {
       <SideNav />
 
       {/* Main column offset by sidebar width so sticky TopNav doesn't cover SideNav */}
-      <div className="flex flex-col min-h-screen md:ml-72">
+      <div className="flex flex-col min-h-screen md:ml-72 pt-16">
         {/* TopNav - Sticky top */}
         <TopNav title={title} />
 

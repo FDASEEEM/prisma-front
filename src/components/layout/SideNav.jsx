@@ -3,7 +3,6 @@
  * Navegación lateral (desktop) con responsive
  */
 
-import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
@@ -11,13 +10,11 @@ import Button from '../ui/Button';
 const SideNav = () => {
   const location = useLocation();
   const { logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(true);
 
   const navItems = [
     { path: '/nueva-sesion', label: 'Nueva Sesión', icon: 'add_circle' },
     { path: '/dashboard', label: 'Escritorio', icon: 'dashboard' },
     { path: '/paci', label: 'Alumnos', icon: 'group' },
-    { path: '/ajustador', label: 'Ajustador IA', icon: 'psychology' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -25,7 +22,7 @@ const SideNav = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex flex-col p-8 space-y-4 h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 bg-stone-50 dark:bg-stone-950 shadow-2xl shadow-stone-900/10 border-r border-stone-200/50 dark:border-stone-800/50">
+      <nav className="hidden md:flex flex-col p-8 space-y-4 h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 bg-stone-50 dark:bg-stone-950 shadow-2xl shadow-stone-900/10 border-r border-stone-200/50 dark:border-stone-800/50 overflow-hidden">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
@@ -61,14 +58,6 @@ const SideNav = () => {
 
         {/* Footer Actions */}
         <div className="mt-auto pt-6 border-t border-stone-200/50 dark:border-stone-800/50 space-y-4">
-          <Button
-            variant="primary"
-            fullWidth
-            size="md"
-            icon="add"
-          >
-            Nuevo PACI
-          </Button>
           <button className="flex items-center gap-4 p-3 rounded-full text-stone-600 dark:text-stone-400 hover:translate-x-1 transition-transform duration-200 hover:text-lime-800 font-medium text-sm w-full">
             <span className="material-symbols-outlined">help_outline</span>
             <span>Ayuda</span>
