@@ -24,6 +24,10 @@ const ProfilePage = () => {
   const [showConfirmLogout, setShowConfirmLogout] = useState(false);
 
   useEffect(() => {
+    document.title = 'P.R.I.S.M.A. - Usuario';
+  }, []);
+
+  useEffect(() => {
     if (user) {
       setFormData({
         nombre: user.nombre || '',

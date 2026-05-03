@@ -3,7 +3,7 @@
  * Página de autenticación
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input, Button, Alert, Spinner } from '../components';
@@ -17,6 +17,10 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+
+  useEffect(() => {
+    document.title = 'P.R.I.S.M.A. - Iniciar Sesión';
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};

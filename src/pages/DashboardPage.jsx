@@ -22,6 +22,10 @@ const DashboardPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    document.title = 'P.R.I.S.M.A. - Inicio';
+  }, []);
+
+  useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);

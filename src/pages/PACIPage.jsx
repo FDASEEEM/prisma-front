@@ -31,6 +31,10 @@ const PACIPage = () => {
   });
 
   useEffect(() => {
+    document.title = 'P.R.I.S.M.A. - Perfil PACI';
+  }, []);
+
+  useEffect(() => {
     loadPACIs();
   }, [activeTab]);
 

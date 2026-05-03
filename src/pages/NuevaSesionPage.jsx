@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import { useActiveSession } from '../context/ActiveSessionContext';
@@ -97,6 +97,10 @@ const NuevaSesionPage = () => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    document.title = 'P.R.I.S.M.A. - Adaptar Contenido con IA';
+  }, []);
 
   const canAdvance = () => {
     if (step === 1) return !!paciFile;
