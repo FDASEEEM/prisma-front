@@ -18,6 +18,8 @@ import PACIPage from './pages/PACIPage';
 import AjustadorPage from './pages/AjustadorPage';
 import NuevaSesionPage from './pages/NuevaSesionPage';
 import SesionPage from './pages/SesionPage';
+import HistorialPage from './pages/HistorialPage';
+import AyudaPage from './pages/AyudaPage';
 
 /**
  * ProtectedRoute
@@ -100,6 +102,23 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <SesionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/historial"
+        element={
+          <ProtectedRoute>
+            <HistorialPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ayuda"
+        element={
+          <ProtectedRoute>
+            <AyudaPage />
           </ProtectedRoute>
         }
       />

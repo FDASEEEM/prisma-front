@@ -13,8 +13,9 @@ const SideNav = () => {
 
   const navItems = [
     { path: '/nueva-sesion', label: 'Nueva Sesión', icon: 'add_circle' },
-    { path: '/dashboard', label: 'Escritorio', icon: 'dashboard' },
-    { path: '/paci', label: 'Alumnos', icon: 'group' },
+    { path: '/dashboard',    label: 'Escritorio',   icon: 'dashboard' },
+    { path: '/historial',    label: 'Historial',    icon: 'history' },
+    { path: '/paci',         label: 'Alumnos',      icon: 'group' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -25,17 +26,17 @@ const SideNav = () => {
       <nav className="hidden md:flex flex-col p-8 space-y-4 h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 bg-stone-50 dark:bg-stone-950 shadow-2xl shadow-stone-900/10 border-r border-stone-200/50 dark:border-stone-800/50 overflow-hidden">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4">
-            <img 
-              src="/logos/prisma_logo.png" 
-              alt="P.R.I.S.M.A. Logo" 
-              className="w-12 h-12 rounded-lg shadow-md"
+          <Link to="/dashboard" className="flex items-center gap-4 group">
+            <img
+              src="/logos/prisma_logo.png"
+              alt="P.R.I.S.M.A. Logo"
+              className="w-12 h-12 rounded-lg shadow-md group-hover:shadow-lg transition-shadow"
             />
             <div>
-              <h1 className="font-headline text-xl font-bold text-stone-900 dark:text-stone-100">P.R.I.S.M.A.</h1>
+              <h1 className="font-headline text-xl font-bold text-stone-900 dark:text-stone-100 group-hover:text-lime-800 dark:group-hover:text-lime-400 transition-colors">P.R.I.S.M.A.</h1>
               <p className="text-xs text-stone-500 font-medium tracking-wide uppercase">Modelo Agéntico</p>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Navigation Links */}
@@ -58,10 +59,13 @@ const SideNav = () => {
 
         {/* Footer Actions */}
         <div className="mt-auto pt-6 border-t border-stone-200/50 dark:border-stone-800/50 space-y-4">
-          <button className="flex items-center gap-4 p-3 rounded-full text-stone-600 dark:text-stone-400 hover:translate-x-1 transition-transform duration-200 hover:text-lime-800 font-medium text-sm w-full">
+          <Link
+            to="/ayuda"
+            className="flex items-center gap-4 p-3 rounded-full text-stone-600 dark:text-stone-400 hover:translate-x-1 transition-transform duration-200 hover:text-lime-800 font-medium text-sm w-full"
+          >
             <span className="material-symbols-outlined">help_outline</span>
             <span>Ayuda</span>
-          </button>
+          </Link>
           <button
             onClick={logout}
             className="flex items-center gap-4 p-3 rounded-full text-stone-600 dark:text-stone-400 hover:translate-x-1 transition-transform duration-200 hover:text-red-600 font-medium text-sm w-full"

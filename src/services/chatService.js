@@ -111,6 +111,20 @@ const chatService = {
   },
 
   /**
+   * Cancel Session - Cancela una sesión activa
+   */
+  cancelSession: async (sessionId) => {
+    try {
+      const response = await chatApi.post(CHAT_ENDPOINTS.CANCEL(sessionId));
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) throw new Error('Sesión no encontrada');
+      if (error.response?.status === 409) throw new Error('La sesión ya ha terminado');
+      throw new Error(error.response?.data?.message || 'Error al cancelar la sesión');
+    }
+  },
+
+  /**
    * Health Check - Verifica que el servidor de chat esté disponible
    */
   healthCheck: async () => {

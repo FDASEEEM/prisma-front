@@ -20,6 +20,7 @@ export const CHAT_ENDPOINTS = {
   STATE: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/state`,
   STREAM: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/stream`,
   HITL: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/hitl`,
+  CANCEL: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/cancel`,
   DOWNLOAD: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/download`,
   HEALTH: `${CHAT_API_URL}/health`,
 };
@@ -27,6 +28,7 @@ export const CHAT_ENDPOINTS = {
 export const JOBS_ENDPOINTS = {
   UPLOAD: `${DOCS_API_URL}/api/jobs/upload`,
   LIST: `${DOCS_API_URL}/api/jobs`,
+  HISTORY: `${DOCS_API_URL}/api/jobs/history`,
   STATUS: (id) => `${DOCS_API_URL}/api/jobs/${id}`,
   DOWNLOAD: (id) => `${DOCS_API_URL}/api/jobs/${id}/download`,
 };
