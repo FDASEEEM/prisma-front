@@ -158,7 +158,8 @@ const PHASE_CONFIG = {
   awaiting_hitl:      { label: 'Esperando revisión',       badge: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40', icon: 'pending_actions' },
   completed:          { label: 'Completado',               badge: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950/40', icon: 'check_circle' },
   completed_degraded: { label: 'Completado con advertencia', badge: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40', icon: 'warning' },
-  error_hitl_rejected:{ label: 'Cancelado',                badge: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950/40',    icon: 'cancel' },
+  cancelled:          { label: 'Cancelada',                badge: 'text-stone-700 bg-stone-100 dark:text-stone-300 dark:bg-stone-800',   icon: 'cancel' },
+  error_hitl_rejected:{ label: 'Sin aprobación',           badge: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950/40',    icon: 'cancel' },
   error:              { label: 'Error',                    badge: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950/40',        icon: 'error' },
 };
 
@@ -167,7 +168,7 @@ const PHASE_CONFIG = {
 const SesionPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
-  const { startTracking } = useActiveSession();
+  const { activeSession, startTracking, stopTracking } = useActiveSession();
 
   const [phase, setPhase] = useState('running');
   const [workflowStatus, setWorkflowStatus] = useState(null);
@@ -176,8 +177,29 @@ const SesionPage = () => {
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const bottomRef = useRef(null);
   const eventSourceRef = useRef(null);
+
+  // Sincronizar fase terminal desde el contexto global para que el botón de descarga
+  // y el toast aparezcan al mismo tiempo (ambos tienen SSE independientes al mismo stream).
+  useEffect(() => {
+    if (activeSession?.sessionId !== sessionId) return;
+    const ctxPhase = activeSession?.phase;
+    if (ctxPhase === 'completed' || ctxPhase === 'error') {
+      setPhase(ctxPhase);
+      if (activeSession?.workflowStatus) setWorkflowStatus(activeSession.workflowStatus);
+    }
+  }, [activeSession?.phase, activeSession?.workflowStatus, sessionId]);
+
+  // Cuando la sesión termina mientras el usuario está en esta página,
+  // limpiar el tracking global para que el indicador flotante no aparezca
+  // al navegar a otra vista (el usuario ya vio el resultado aquí).
+  useEffect(() => {
+    if (phase === 'completed' || phase === 'error') {
+      stopTracking();
+    }
+  }, [phase, stopTracking]);
 
   // ── Manejador de eventos SSE ──────────────────────────────────────────────
   const handleSSEEvent = useCallback((event) => {
@@ -307,6 +329,18 @@ const SesionPage = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, hitlData, phase]);
 
+  const handleCancel = async () => {
+    if (!window.confirm('¿Seguro que deseas cancelar esta sesión? El proceso se detendrá y no podrá retomarse.')) return;
+    setCancelling(true);
+    try {
+      await chatService.cancelSession(sessionId);
+    } catch (err) {
+      console.error('Cancel error:', err);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const handleHitlRespond = async (response) => {
     await chatService.sendHitlDecision(
       sessionId,
@@ -319,8 +353,9 @@ const SesionPage = () => {
   };
 
   const phaseKey =
-    phase === 'completed' && workflowStatus === 'degraded' ? 'completed_degraded' :
-    phase === 'error'     && workflowStatus === 'hitl_rejected' ? 'error_hitl_rejected' :
+    phase === 'completed' && workflowStatus === 'degraded'      ? 'completed_degraded' :
+    phase === 'error'     && workflowStatus === 'cancelled'      ? 'cancelled' :
+    phase === 'error'     && workflowStatus === 'hitl_rejected'  ? 'error_hitl_rejected' :
     phase;
   const phaseConf = PHASE_CONFIG[phaseKey] || PHASE_CONFIG.running;
 
@@ -334,7 +369,17 @@ const SesionPage = () => {
             <p className="text-xs text-stone-400 mb-0.5">ID de sesión</p>
             <p className="font-mono text-sm text-stone-600 dark:text-stone-300 break-all">{sessionId}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {(phase === 'running' || phase === 'awaiting_hitl') && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 dark:hover:text-red-400 disabled:opacity-40 transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">stop_circle</span>
+                {cancelling ? 'Cancelando...' : 'Cancelar sesión'}
+              </button>
+            )}
             <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${phaseConf.badge}`}>
               <span className={`material-symbols-outlined text-sm ${phase === 'running' ? 'animate-spin' : ''}`}>
                 {phaseConf.icon}
@@ -410,6 +455,24 @@ const SesionPage = () => {
                 >
                   {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
+                </button>
+              </div>
+            )}
+
+            {phase === 'error' && workflowStatus === 'cancelled' && (
+              <div className="bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-2xl p-4 text-sm mt-2">
+                <p className="font-semibold mb-1 flex items-center gap-1.5 text-stone-800 dark:text-stone-200">
+                  <span className="material-symbols-outlined text-base">stop_circle</span>
+                  Sesión cancelada
+                </p>
+                <p className="text-stone-700 dark:text-stone-300">
+                  El docente canceló el proceso. Puede iniciar una nueva sesión cuando lo desee.
+                </p>
+                <button
+                  onClick={() => navigate('/nueva-sesion')}
+                  className="mt-3 text-xs font-semibold text-stone-700 dark:text-stone-300 underline hover:text-stone-900 dark:hover:text-stone-100"
+                >
+                  Iniciar nueva sesión
                 </button>
               </div>
             )}

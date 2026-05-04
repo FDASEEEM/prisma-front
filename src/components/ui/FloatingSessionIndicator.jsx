@@ -11,7 +11,7 @@ const FloatingSessionIndicator = () => {
   const { phase, sessionId, currentStep } = activeSession;
 
   if (phase !== 'running' && phase !== 'awaiting_hitl' && phase !== 'completed') return null;
-  if (phase !== 'completed' && location.pathname === `/sesion/${sessionId}`) return null;
+  if (location.pathname === `/sesion/${sessionId}`) return null;
 
   const isHitl = phase === 'awaiting_hitl';
   const isCompleted = phase === 'completed';

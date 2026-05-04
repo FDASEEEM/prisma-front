@@ -31,6 +31,15 @@ const jobsService = {
     }
   },
 
+  getHistory: async () => {
+    try {
+      const response = await docsApi.get(JOBS_ENDPOINTS.HISTORY);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener historial');
+    }
+  },
+
   listJobs: async (page = 1, limit = 10) => {
     try {
       const response = await docsApi.get(JOBS_ENDPOINTS.LIST, {
