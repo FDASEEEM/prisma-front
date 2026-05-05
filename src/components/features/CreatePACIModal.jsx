@@ -10,6 +10,66 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import paciService from '../../services/paciService';
 
+const COURSE_OPTIONS = [
+  '1° Básico',
+  '2° Básico',
+  '3° Básico',
+  '4° Básico',
+  '5° Básico',
+  '6° Básico',
+  '7° Básico',
+  '8° Básico',
+  '1° Medio',
+  '2° Medio',
+  '3° Medio',
+  '4° Medio',
+];
+
+const DIAGNOSIS_OPTIONS = {
+  Permanentes: [
+    'TEA',
+    'Discapacidad Motriz',
+    'Discapacidad Sensorial', 
+  ],
+  Transitorias: [
+    'Dificultades Especificas del Aprendizaje',
+    'TDAH',
+    'Funcionamiento Intelectual Limitrofe (FEL)',
+  ],
+};
+
+const SEMESTER_OPTIONS = [
+  'Semestre 1',
+  'Semestre 2',
+];
+
+const getBaseYear = (dateValue) => {
+  if (!dateValue) return new Date().getFullYear();
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) return new Date().getFullYear();
+  return parsed.getFullYear();
+};
+
+const formatDateInput = (date) => date.toISOString().slice(0, 10);
+
+const getSemesterRange = (semester, year) => {
+  if (semester === 'Semestre 1') {
+    return {
+      validFrom: formatDateInput(new Date(Date.UTC(year, 2, 1))),
+      validUntil: formatDateInput(new Date(Date.UTC(year, 6, 31))),
+    };
+  }
+
+  if (semester === 'Semestre 2') {
+    return {
+      validFrom: formatDateInput(new Date(Date.UTC(year, 7, 1))),
+      validUntil: formatDateInput(new Date(Date.UTC(year, 11, 31))),
+    };
+  }
+
+  return { validFrom: '', validUntil: '' };
+};
+
 const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -41,10 +101,21 @@ const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const handlePaciChange = (e) => {
-    setPaciData({
+    const { name, value } = e.target;
+    const nextData = {
       ...paciData,
-      [e.target.name]: e.target.value,
-    });
+      [name]: value,
+    };
+
+    if (name === 'duracion' || name === 'fechaElaboracion') {
+      const baseYear = getBaseYear(name === 'fechaElaboracion' ? value : paciData.fechaElaboracion);
+      const { validFrom, validUntil } = getSemesterRange(name === 'duracion' ? value : paciData.duracion, baseYear);
+
+      nextData.validFrom = validFrom;
+      nextData.validUntil = validUntil;
+    }
+
+    setPaciData(nextData);
   };
 
   const handleSubmit = async (e) => {
@@ -122,28 +193,54 @@ const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
             required
           />
 
-          <Input
-            label="Curso Actual"
-            name="cursoActual"
-            value={studentData.cursoActual}
-            onChange={handleStudentChange}
-            placeholder="Ej: 3° Básico"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-2">Curso Actual</label>
+            <select
+              name="cursoActual"
+              value={studentData.cursoActual}
+              onChange={handleStudentChange}
+              required
+              className="w-full rounded-lg border border-outline-variant/40 bg-surface px-3 py-2 text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="" disabled>
+                Selecciona un curso
+              </option>
+              {COURSE_OPTIONS.map((course) => (
+                <option key={course} value={course}>
+                  {course}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Sección PACI */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Datos del PACI</h3>
           
-          <Input
-            label="Diagnóstico"
-            name="diagnostico"
-            value={paciData.diagnostico}
-            onChange={handlePaciChange}
-            placeholder="Ej: TEA, TDAH, Dislexia"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-2">Diagnostico</label>
+            <select
+              name="diagnostico"
+              value={paciData.diagnostico}
+              onChange={handlePaciChange}
+              required
+              className="w-full rounded-lg border border-outline-variant/40 bg-surface px-3 py-2 text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="" disabled>
+                Selecciona un diagnostico
+              </option>
+              {Object.entries(DIAGNOSIS_OPTIONS).map(([group, options]) => (
+                <optgroup key={group} label={group}>
+                  {options.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -165,14 +262,25 @@ const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
             />
           </div>
 
-          <Input
-            label="Duración"
-            name="duracion"
-            value={paciData.duracion}
-            onChange={handlePaciChange}
-            placeholder="Ej: 1 año escolar"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-2">Duracion (semestral)</label>
+            <select
+              name="duracion"
+              value={paciData.duracion}
+              onChange={handlePaciChange}
+              required
+              className="w-full rounded-lg border border-outline-variant/40 bg-surface px-3 py-2 text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="" disabled>
+                Selecciona un semestre
+              </option>
+              {SEMESTER_OPTIONS.map((semester) => (
+                <option key={semester} value={semester}>
+                  {semester}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -181,6 +289,8 @@ const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
               name="validFrom"
               value={paciData.validFrom}
               onChange={handlePaciChange}
+              readOnly
+              disabled
               required
             />
 
@@ -190,6 +300,8 @@ const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
               name="validUntil"
               value={paciData.validUntil}
               onChange={handlePaciChange}
+              readOnly
+              disabled
               required
             />
           </div>
