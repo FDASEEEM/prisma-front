@@ -6,6 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from './AuthContext';
 import storageUtils from '../utils/localStorage';
 
@@ -36,17 +37,18 @@ describe('AuthContext', () => {
     });
 
     it('debe cargar usuario y tokens de localStorage al montar', () => {
-      const mockUser = { id: '1', email: 'test@example.com', nombre: 'Test User' };
+      const mockUser = { id: '1', email: 'test@example.com', nombre: 'Test User', role: 'TEACHER' };
       storageUtils.getUser.mockReturnValueOnce(mockUser);
       storageUtils.getToken.mockReturnValueOnce('token_123');
 
       const TestComponent = () => {
-        const { user, isAuthenticated, isLoading } = useAuth();
+        const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
         return (
           <div>
             <div data-testid="is-authenticated">{String(isAuthenticated)}</div>
             <div data-testid="user-email">{user?.email}</div>
             <div data-testid="is-loading">{String(isLoading)}</div>
+            <div data-testid="is-admin">{String(isAdmin)}</div>
           </div>
         );
       };
@@ -60,6 +62,7 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
       expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true');
       expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com');
+      expect(screen.getByTestId('is-admin')).toHaveTextContent('false');
     });
 
     it('debe inicializar sin usuario si no hay sesión guardada', () => {
@@ -101,7 +104,7 @@ describe('AuthContext', () => {
     });
 
     it('debe proporcionar función login', async () => {
-      const mockUser = { id: '1', email: 'test@example.com' };
+      const mockUser = { id: '1', email: 'test@example.com', role: 'ADMIN' };
 
       const TestComponent = () => {
         const { login, user, isAuthenticated } = useAuth();
@@ -128,6 +131,34 @@ describe('AuthContext', () => {
         expect(storageUtils.saveUser).toHaveBeenCalledWith(mockUser);
         expect(storageUtils.saveToken).toHaveBeenCalledWith('token');
         expect(storageUtils.saveRefreshToken).toHaveBeenCalledWith('refresh');
+      });
+    });
+
+    it('debe exponer isAdmin cuando el login recibe rol ADMIN', async () => {
+      const TestComponent = () => {
+        const { login, isAdmin } = useAuth();
+        return (
+          <div>
+            <button
+              onClick={() => login({ id: '1', email: 'admin@correo.com', role: 'ADMIN' }, { access_token: 'token', refresh_token: 'refresh' })}
+            >
+              Login as admin
+            </button>
+            <div data-testid="is-admin">{String(isAdmin)}</div>
+          </div>
+        );
+      };
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: /login as admin/i }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-admin')).toHaveTextContent('true');
       });
     });
 

@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const isAdmin = user?.role === 'ADMIN';
 
   // Recuperar sesión al montar el componente
   useEffect(() => {
@@ -52,6 +53,7 @@ export const AuthProvider = ({ children }) => {
       user,
       isAuthenticated,
       isLoading,
+      isAdmin,
       login,
       logout,
       updateUser,
