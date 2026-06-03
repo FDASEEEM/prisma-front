@@ -43,6 +43,7 @@ export const ADMIN_ENDPOINTS = {
   RESOURCE: (id) => `${ADMIN_API_URL}/api/admin/resources/${id}`,
   ANNOUNCEMENTS: `${ADMIN_API_URL}/api/admin/announcements`,
   ANNOUNCEMENT: (id) => `${ADMIN_API_URL}/api/admin/announcements/${id}`,
+  ANNOUNCEMENTS_ACTIVE: `${ADMIN_API_URL}/api/admin/announcements/active`,
   AUDIT_LOGS: `${ADMIN_API_URL}/api/admin/audit-logs`,
   PROFESSORS: `${ADMIN_API_URL}/api/admin/professors`,
   PROFESSOR: (id) => `${ADMIN_API_URL}/api/admin/professors/${id}`,

@@ -124,6 +124,16 @@ const adminPanelService = {
     }
   },
 
+  getActiveAnnouncements: async () => {
+    try {
+      const adminApi = createAdminApi();
+      const response = await adminApi.get(ADMIN_ENDPOINTS.ANNOUNCEMENTS_ACTIVE);
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener anuncios activos'));
+    }
+  },
+
   createAnnouncement: async (payload) => {
     try {
       const adminApi = createAdminApi();
