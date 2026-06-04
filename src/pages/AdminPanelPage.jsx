@@ -731,9 +731,19 @@ const AdminPanelPage = () => {
                       <Badge variant="info">{log.entity}</Badge>
                     </div>
                     <div className="mt-1 text-sm text-gray-500">
-                      Actor: {log.metadata?.actorName || log.metadata?.actorEmail || log.actorId}
-                      {(log.metadata?.actorName || log.metadata?.actorEmail) && (
-                        <span className="text-xs text-gray-400 ml-1">({log.actorId})</span>
+                      {log.actorName ? (
+                        <>
+                          <span className="font-medium">{log.actorName}</span>
+                          {log.actorEmail && <span className="text-gray-400 ml-1">&lt;{log.actorEmail}&gt;</span>}
+                          <span className="text-xs text-gray-400 ml-1">({log.actorId})</span>
+                        </>
+                      ) : log.actorEmail ? (
+                        <>
+                          <span>{log.actorEmail}</span>
+                          <span className="text-xs text-gray-400 ml-1">({log.actorId})</span>
+                        </>
+                      ) : (
+                        <span>Actor: {log.actorId}</span>
                       )}
                     </div>
                     <div className="mt-1 text-sm text-gray-600 break-all">{log.entityId || 'sin entidad'}</div>
