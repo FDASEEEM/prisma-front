@@ -273,6 +273,26 @@ const adminPanelService = {
       throw new Error(getMessage(error, 'Error al terminar sesión'));
     }
   },
+
+  getNotifications: async (userId) => {
+    try {
+      const adminApi = createAdminApi();
+      const response = await adminApi.get(`${ADMIN_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener notificaciones'));
+    }
+  },
+
+  markNotificationRead: async (id) => {
+    try {
+      const adminApi = createAdminApi();
+      const response = await adminApi.patch(ADMIN_ENDPOINTS.NOTIFICATION_READ(id));
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al marcar notificación como leída'));
+    }
+  },
 };
 
 export default adminPanelService;

@@ -55,6 +55,8 @@ export const ADMIN_ENDPOINTS = {
   SESSION_BLOCK: (id) => `${ADMIN_API_URL}/api/admin/sessions/${id}/block`,
   SESSION_UNBLOCK: (id) => `${ADMIN_API_URL}/api/admin/sessions/${id}/unblock`,
   SESSION_TERMINATE: (id) => `${ADMIN_API_URL}/api/admin/sessions/${id}/terminate`,
+  NOTIFICATIONS: `${ADMIN_API_URL}/api/notifications`,
+  NOTIFICATION_READ: (id) => `${ADMIN_API_URL}/api/notifications/${id}/read`,
 };
 
 export const API_URLS = {

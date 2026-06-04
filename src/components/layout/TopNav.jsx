@@ -23,6 +23,7 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [serviceStatus, setServiceStatus] = useState(
     SERVICE_STATUS_URLS.reduce((acc, s) => ({ ...acc, [s.name]: 'checking' }), {})
   );
@@ -64,6 +65,22 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
   }, []);
 
   useEffect(() => {
+    const loadNotifications = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await adminPanelService.getNotifications(user.id);
+        setNotifications(data || []);
+      } catch {
+        setNotifications([]);
+      }
+    };
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (settingsRef.current && !settingsRef.current.contains(e.target)) {
         setIsSettingsOpen(false);
@@ -91,6 +108,15 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
     setIsProfileOpen(false);
   };
 
+  const handleMarkNotificationRead = async (notifId) => {
+    try {
+      await adminPanelService.markNotificationRead(notifId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 border-b border-stone-200/50 dark:border-stone-800/50 transition-all duration-300">
       <div className="flex justify-between items-center px-6 md:pl-72 md:pr-10 h-full w-full">
@@ -113,9 +139,9 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
             >
               <span className="material-symbols-outlined">notifications</span>
               {/* Notification Badge */}
-              {announcements.length > 0 && (
+              {(announcements.length + notifications.filter((n) => !n.read).length) > 0 && (
                 <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-error rounded-full flex items-center justify-center text-[10px] font-bold text-white">
-                  {announcements.length}
+                  {announcements.length + notifications.filter((n) => !n.read).length}
                 </span>
               )}
             </button>
@@ -124,34 +150,51 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
             {isNotificationsOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/15 overflow-hidden z-50">
                 <div className="px-4 py-3 border-b border-outline-variant/15 flex items-center justify-between">
-                  <p className="text-sm font-medium text-on-surface">Anuncios del sistema</p>
-                  {announcements.length > 0 && (
+                  <p className="text-sm font-medium text-on-surface">Notificaciones</p>
+                  {(announcements.length + notifications.filter((n) => !n.read).length) > 0 && (
                     <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                      {announcements.length} nuevo{announcements.length > 1 ? 's' : ''}
+                      {announcements.length + notifications.filter((n) => !n.read).length} nuevo{(announcements.length + notifications.filter((n) => !n.read).length) > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
-                  {announcements.length === 0 ? (
-                    <div className="px-4 py-6 text-center">
-                      <span className="material-symbols-outlined text-3xl text-on-surface-variant/50 mb-2">notifications_off</span>
-                      <p className="text-sm text-on-surface-variant">No hay anuncios activos</p>
-                    </div>
-                  ) : (
+                  {notifications.filter((n) => !n.read).length > 0 && (
                     <div className="divide-y divide-outline-variant/10">
+                      {notifications.filter((n) => !n.read).map((notif) => (
+                        <div key={notif.id} className="px-4 py-3 hover:bg-surface-container-low transition-colors cursor-pointer flex items-start gap-2" onClick={() => handleMarkNotificationRead(notif.id)}>
+                          <span className="material-symbols-outlined text-primary text-sm mt-0.5">mark_email_unread</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-on-surface line-clamp-1">{notif.title}</p>
+                            <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-2">{notif.message}</p>
+                            <p className="text-[10px] text-on-surface-variant/70 mt-1">
+                              {new Date(notif.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <button className="text-xs text-primary hover:underline whitespace-nowrap">Leído</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {announcements.length > 0 && (
+                    <div className="divide-y divide-outline-variant/10">
+                      <div className="px-4 py-2 bg-surface-container/50">
+                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Anuncios del sistema</p>
+                      </div>
                       {announcements.map((announcement) => (
                         <div key={announcement.id} className="px-4 py-3 hover:bg-surface-container-low transition-colors cursor-pointer">
                           <p className="text-sm font-medium text-on-surface line-clamp-1">{announcement.title}</p>
                           <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{announcement.body}</p>
                           <p className="text-[10px] text-on-surface-variant/70 mt-1">
-                            {new Date(announcement.createdAt).toLocaleDateString('es-ES', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                            {new Date(announcement.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </p>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {announcements.length === 0 && notifications.filter((n) => !n.read).length === 0 && (
+                    <div className="px-4 py-6 text-center">
+                      <span className="material-symbols-outlined text-3xl text-on-surface-variant/50 mb-2">notifications_off</span>
+                      <p className="text-sm text-on-surface-variant">No hay notificaciones nuevas</p>
                     </div>
                   )}
                 </div>
