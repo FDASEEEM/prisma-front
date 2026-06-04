@@ -39,6 +39,7 @@ export const ADMIN_ENDPOINTS = {
   ME: `${ADMIN_API_URL}/api/admin/me`,
   TICKETS: `${ADMIN_API_URL}/api/admin/tickets`,
   TICKET: (id) => `${ADMIN_API_URL}/api/admin/tickets/${id}`,
+  TICKETS_BY_REQUESTER: (requesterId) => `${ADMIN_API_URL}/api/admin/tickets/by-requester/${requesterId}`,
   RESOURCES: `${ADMIN_API_URL}/api/admin/resources`,
   RESOURCE: (id) => `${ADMIN_API_URL}/api/admin/resources/${id}`,
   ANNOUNCEMENTS: `${ADMIN_API_URL}/api/admin/announcements`,

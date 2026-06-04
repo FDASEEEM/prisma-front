@@ -116,6 +116,17 @@ const AdminPanelPage = () => {
   const [editingResource, setEditingResource] = useState(null);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [editingProfessor, setEditingProfessor] = useState(null);
+  const [replyingTicket, setReplyingTicket] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [quickReply, setQuickReply] = useState('');
+
+  const QUICK_REPLIES = [
+    { value: '', label: 'Respuesta personalizada...' },
+    { value: 'Solucionado. Revisa nuevamente.', label: 'Solucionado' },
+    { value: 'Estamos revisando tu caso. Te contactaremos pronto.', label: 'En revisión' },
+    { value: 'Escalado al equipo técnico.', label: 'Escalado' },
+    { value: 'Necesitamos más información. ¿Puedes detallar el error?', label: 'Más info' },
+  ];
 
   useEffect(() => {
     document.title = 'P.R.I.S.M.A. - Admin Panel';
@@ -308,6 +319,24 @@ const AdminPanelPage = () => {
     }
   };
 
+  const handleTicketReply = async (ticketId) => {
+    if (!replyText.trim() && !quickReply) return;
+    const message = quickReply || replyText;
+    try {
+      setBusy(true);
+      await adminPanelService.updateTicket(ticketId, { message });
+      await loadData();
+      setReplyingTicket(null);
+      setReplyText('');
+      setQuickReply('');
+      showToast('Respuesta enviada');
+    } catch (err) {
+      showToast(err.message || 'No se pudo enviar la respuesta', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const requestDelete = (type, id, name) => setConfirmDelete({ type, id, name });
 
   const handleDelete = async () => {
@@ -477,6 +506,59 @@ const AdminPanelPage = () => {
                       </div>
                     </div>
                     <p className="text-sm text-gray-600 mt-2">{ticket.message}</p>
+
+                    {/* Replies */}
+                    {ticket.replies?.length > 0 && (
+                      <div className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
+                        {ticket.replies.map((reply) => (
+                          <div key={reply.id} className="bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                            <p className="text-gray-700">{reply.message}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">{formatDate(reply.createdAt)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Reply Form */}
+                    {replyingTicket === ticket.id ? (
+                      <div className="mt-3 space-y-2">
+                        <select
+                          value={quickReply}
+                          onChange={(e) => { setQuickReply(e.target.value); if (e.target.value) setReplyText(''); }}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                        >
+                          {QUICK_REPLIES.map((qr) => (
+                            <option key={qr.value} value={qr.value}>{qr.label}</option>
+                          ))}
+                        </select>
+                        {!quickReply && (
+                          <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Escribe una respuesta personalizada..."
+                            rows={3}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                          />
+                        )}
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleTicketReply(ticket.id)} disabled={busy || (!replyText.trim() && !quickReply)}>
+                            {busy ? 'Enviando...' : 'Enviar respuesta'}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setReplyingTicket(null); setReplyText(''); setQuickReply(''); }} disabled={busy}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setReplyingTicket(ticket.id)}
+                        className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm">reply</span>
+                        Responder
+                      </button>
+                    )}
+
                     <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
                       <span className="material-symbols-outlined text-sm">schedule</span>
                       {formatDate(ticket.createdAt)}

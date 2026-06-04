@@ -44,6 +44,16 @@ const adminPanelService = {
     }
   },
 
+  getTicketsByRequester: async (requesterId) => {
+    try {
+      const adminApi = createAdminApi();
+      const response = await adminApi.get(ADMIN_ENDPOINTS.TICKETS_BY_REQUESTER(requesterId));
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener tus tickets'));
+    }
+  },
+
   createTicket: async (payload) => {
     try {
       const adminApi = createAdminApi();
