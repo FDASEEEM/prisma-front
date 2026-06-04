@@ -442,20 +442,44 @@ const AdminPanelPage = () => {
               <p className="text-sm text-gray-500">Los tickets son creados por los docentes desde su escritorio. Aquí puedes verlos, cambiar su estado o eliminarlos.</p>
               <div className="space-y-3 max-h-[36rem] overflow-auto pr-1">
                 {tickets.length ? tickets.map((ticket) => (
-                  <div key={ticket.id} className="rounded-xl border border-gray-200 p-4 space-y-3">
+                  <div key={ticket.id} className="rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-gray-900">{ticket.subject}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">{ticket.subject}</div>
                         <div className="text-sm text-gray-500">{ticket.requesterId}</div>
                       </div>
-                      <StatusBadge status={ticket.status} />
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <select
+                          value={ticket.status}
+                          onChange={(e) => handleTicketStatus(ticket.id, e.target.value)}
+                          disabled={busy}
+                          className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 appearance-none pr-6 relative
+                            ${ticket.status === 'open'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 focus:ring-blue-300'
+                              : ticket.status === 'in_progress'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 focus:ring-amber-300'
+                              : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100 focus:ring-green-300'
+                            } disabled:opacity-50`}
+                          style={{ backgroundImage: 'none' }}
+                        >
+                          <option value="open">Abierto</option>
+                          <option value="in_progress">En proceso</option>
+                          <option value="closed">Cerrado</option>
+                        </select>
+                        <button
+                          onClick={() => requestDelete('ticket', ticket.id, ticket.subject)}
+                          disabled={busy}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50"
+                          title="Eliminar ticket"
+                        >
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600">{ticket.message}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => handleTicketStatus(ticket.id, 'open')} disabled={busy}>Abrir</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleTicketStatus(ticket.id, 'in_progress')} disabled={busy}>En proceso</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleTicketStatus(ticket.id, 'closed')} disabled={busy}>Cerrar</Button>
-                      <Button size="sm" variant="danger" onClick={() => requestDelete('ticket', ticket.id, ticket.subject)} disabled={busy}>Eliminar</Button>
+                    <p className="text-sm text-gray-600 mt-2">{ticket.message}</p>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                      <span className="material-symbols-outlined text-sm">schedule</span>
+                      {formatDate(ticket.createdAt)}
                     </div>
                   </div>
                 )) : <div className="text-sm text-gray-500">No hay tickets registrados.</div>}
