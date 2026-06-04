@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import MainContainer from '../components/layout/MainContainer';
+import { useAuth } from '../context/AuthContext';
+import adminPanelService from '../services/adminPanelService';
+import { Button, Input } from '../components/ui';
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const PANEL = 'bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-2xl';
@@ -164,8 +167,34 @@ const STEPS = [
 const AyudaPage = () => {
   const [active, setActive] = useState(0);
   const step = STEPS[active];
+  const { user } = useAuth();
+  const [ticketForm, setTicketForm] = useState({ subject: '', message: '' });
+  const [ticketBusy, setTicketBusy] = useState(false);
+  const [ticketSuccess, setTicketSuccess] = useState(false);
+  const [ticketError, setTicketError] = useState('');
 
   useEffect(() => { document.title = 'P.R.I.S.M.A. - Ayuda'; }, []);
+
+  const handleCreateTicket = async (e) => {
+    e.preventDefault();
+    if (!ticketForm.subject.trim() || !ticketForm.message.trim()) return;
+    setTicketBusy(true);
+    setTicketError('');
+    setTicketSuccess(false);
+    try {
+      await adminPanelService.createTicket({
+        requesterId: user?.id || 'unknown',
+        subject: ticketForm.subject,
+        message: ticketForm.message,
+      });
+      setTicketSuccess(true);
+      setTicketForm({ subject: '', message: '' });
+    } catch (err) {
+      setTicketError(err.message || 'No se pudo enviar el ticket');
+    } finally {
+      setTicketBusy(false);
+    }
+  };
 
   return (
     <MainContainer title="Guía de uso">
@@ -268,6 +297,50 @@ const AyudaPage = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Soporte / Crear Ticket */}
+        <div className={`${PANEL} p-5`}>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="material-symbols-outlined text-stone-500">support_agent</span>
+            <h2 className={`${H2}`}>Soporte</h2>
+          </div>
+          <p className={`${BODY} mb-4`}>
+            ¿Tienes un problema o necesitas ayuda? Envía un ticket al equipo de administración.
+          </p>
+          {ticketSuccess && (
+            <div className="mb-4 rounded-xl bg-lime-50 dark:bg-lime-950/30 border border-lime-200 dark:border-lime-800 px-4 py-3 text-sm text-lime-800 dark:text-lime-300">
+              <span className="font-bold">Ticket enviado correctamente.</span> El equipo de administración lo revisará pronto.
+            </div>
+          )}
+          {ticketError && (
+            <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+              {ticketError}
+            </div>
+          )}
+          <form onSubmit={handleCreateTicket} className="space-y-3">
+            <Input
+              label="Asunto"
+              value={ticketForm.subject}
+              onChange={(e) => setTicketForm((prev) => ({ ...prev, subject: e.target.value }))}
+              placeholder="Ej: Error al generar PDF"
+              required
+            />
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Mensaje</label>
+              <textarea
+                value={ticketForm.message}
+                onChange={(e) => setTicketForm((prev) => ({ ...prev, message: e.target.value }))}
+                placeholder="Describe tu problema con el mayor detalle posible..."
+                rows={4}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={ticketBusy || !ticketForm.subject.trim() || !ticketForm.message.trim()}>
+              {ticketBusy ? 'Enviando...' : 'Enviar ticket'}
+            </Button>
+          </form>
         </div>
 
       </div>
