@@ -5,6 +5,7 @@ import chatService from '../services/chatService';
 import { CHAT_ENDPOINTS } from '../constants/api';
 import storageUtils from '../utils/localStorage';
 import { useActiveSession } from '../context/ActiveSessionContext';
+import FeedbackWidget from '../components/features/FeedbackWidget';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
@@ -435,6 +436,7 @@ const SesionPage = () => {
                   {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
                 </button>
+                <FeedbackWidget sessionId={sessionId} />
               </div>
             )}
 
@@ -456,6 +458,7 @@ const SesionPage = () => {
                   {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
                 </button>
+                <FeedbackWidget sessionId={sessionId} />
               </div>
             )}
 

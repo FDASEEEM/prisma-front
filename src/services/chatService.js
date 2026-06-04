@@ -125,6 +125,22 @@ const chatService = {
   },
 
   /**
+   * Submit Feedback - Registra el feedback del docente (👍/👎) sobre la rúbrica generada
+   */
+  submitFeedback: async (sessionId, { approved, comment }) => {
+    try {
+      const response = await chatApi.post(CHAT_ENDPOINTS.FEEDBACK, {
+        session_id: sessionId,
+        approved,
+        ...(comment ? { comment } : {}),
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Error al enviar feedback');
+    }
+  },
+
+  /**
    * Health Check - Verifica que el servidor de chat esté disponible
    */
   healthCheck: async () => {
