@@ -16,6 +16,7 @@ const SideNav = () => {
     { path: '/dashboard',    label: 'Escritorio',   icon: 'dashboard' },
     { path: '/historial',    label: 'Historial',    icon: 'history' },
     { path: '/paci',         label: 'Alumnos',      icon: 'group' },
+    { path: '/soporte',      label: 'Soporte',      icon: 'support_agent' },
     { path: '/admin',        label: 'Admin Panel',  icon: 'admin_panel_settings', adminOnly: true },
   ];
 

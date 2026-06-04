@@ -21,6 +21,7 @@ import SesionPage from './pages/SesionPage';
 import HistorialPage from './pages/HistorialPage';
 import AyudaPage from './pages/AyudaPage';
 import AdminPanelPage from './pages/AdminPanelPage';
+import SoportePage from './pages/SoportePage';
 import ForbiddenPage from './pages/ForbiddenPage';
 
 /**
@@ -147,6 +148,14 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <AyudaPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/soporte"
+        element={
+          <ProtectedRoute>
+            <SoportePage />
           </ProtectedRoute>
         }
       />

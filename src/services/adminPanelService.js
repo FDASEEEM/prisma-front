@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { ADMIN_ENDPOINTS } from '../constants/api';
 import storageUtils from '../utils/localStorage';
+import { handleAuthFailure } from './authSession';
 
 const createAdminApi = () => {
   const adminApi = axios.create({
@@ -17,6 +18,19 @@ const createAdminApi = () => {
     }
     return config;
   });
+
+  adminApi.interceptors?.response?.use?.(
+    (response) => response,
+    (error) => {
+      const originalRequest = error.config;
+      const errorResponse = error.response?.data;
+      const requestUrl = originalRequest?.url || '';
+      if (error.response?.status === 401) {
+        handleAuthFailure(errorResponse, requestUrl);
+      }
+      return Promise.reject(error);
+    }
+  );
 
   return adminApi;
 };
