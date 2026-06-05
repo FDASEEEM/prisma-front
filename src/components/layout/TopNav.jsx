@@ -12,7 +12,7 @@ import UserAvatar from '../ui/UserAvatar';
 
 const SERVICE_STATUS_URLS = [
   { name: 'Auth', url: 'http://localhost:3001/api/health' },
-  { name: 'Docs', url: 'http://localhost:3002/api/health' },
+  { name: 'Docs', url: 'http://localhost:3000/api/health' },
   { name: 'Perfil Alumno', url: 'http://localhost:3005/health' },
 ];
 

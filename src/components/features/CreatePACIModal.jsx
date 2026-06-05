@@ -124,17 +124,33 @@ const CreatePACIModal = ({ isOpen, onClose, onSuccess }) => {
     setError(null);
 
     try {
-      // Crear estudiante primero
-      const student = await paciService.createStudent({
-        userId: user?.id || 'demo-user-id',
+      // Normalizar fechas del estudiante a formato ISO
+      const normalizedStudent = {
         ...studentData,
-      });
+        fechaNacimiento: studentData.fechaNacimiento
+          ? studentData.fechaNacimiento.split('/').reverse().join('-')
+          : '',
+      };
+
+      // Crear estudiante primero
+      const student = await paciService.createStudent(normalizedStudent);
 
       // Crear perfil PACI
       await paciService.createPACI({
         studentId: student.id,
-        userId: user?.id || 'demo-user-id',
-        ...paciData,
+        diagnostico: paciData.diagnostico,
+        fechaElaboracion: paciData.fechaElaboracion
+          ? paciData.fechaElaboracion.split('/').reverse().join('-')
+          : '',
+        fechaRevision: paciData.fechaRevision
+          ? paciData.fechaRevision.split('/').reverse().join('-')
+          : '',
+        duracion: paciData.duracion,
+        validFrom: paciData.validFrom,
+        validUntil: paciData.validUntil,
+        datosEstructurales: paciData.datosEstructurales && Object.keys(paciData.datosEstructurales).length > 0
+          ? paciData.datosEstructurales
+          : { resumen: '' },
       });
 
       onSuccess && onSuccess();

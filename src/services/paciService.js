@@ -3,12 +3,22 @@
  * Servicio para comunicación con el microservicio de perfiles PACI
  */
 
-import api from './api';
+import axios from 'axios';
+import storageUtils from '../utils/localStorage';
 
-const PACI_BASE_URL = import.meta.env.VITE_API_PERFIL_ALUMNO_URL || 'http://localhost:3000';
+const PACI_BASE_URL = import.meta.env.VITE_API_PERFIL_ALUMNO_URL || 'http://localhost:3005';
 
-const paciApi = api.create({
+const paciApi = axios.create({
   baseURL: PACI_BASE_URL,
+});
+
+// Interceptor para agregar token Bearer
+paciApi.interceptors.request.use((config) => {
+  const token = storageUtils.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 /**
@@ -16,7 +26,7 @@ const paciApi = api.create({
  */
 export const getAllPACIs = async (filters = {}) => {
   const params = new URLSearchParams();
-  
+
   if (filters.studentId) params.append('studentId', filters.studentId);
   if (filters.isActive !== undefined) params.append('isActive', filters.isActive);
   if (filters.curso) params.append('curso', filters.curso);
@@ -68,7 +78,7 @@ export const createStudent = async (data) => {
 };
 
 /**
- * Actualizar un perfil PACI (archiva el anterior automáticamente)
+ * Actualizar un perfil PACI
  */
 export const updatePACI = async (id, data) => {
   const response = await paciApi.patch(`/paci-profiles/${id}`, data);
