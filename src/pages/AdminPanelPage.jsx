@@ -23,6 +23,21 @@ const StatusBadge = ({ status }) => {
   return <Badge variant={variant}>{status}</Badge>;
 };
 
+const PriorityBadge = ({ priority }) => {
+  const prio = priority || 'medium';
+  const colors = {
+    high: 'bg-red-100 text-red-700 border-red-200',
+    medium: 'bg-amber-100 text-amber-700 border-amber-200',
+    low: 'bg-green-100 text-green-700 border-green-200',
+  };
+  const labels = { high: 'ALTA', medium: 'MEDIA', low: 'BAJA' };
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${colors[prio] || colors.medium}`}>
+      {labels[prio] || labels.medium}
+    </span>
+  );
+};
+
 const TabButton = ({ active, label, onClick }) => (
   <button
     onClick={onClick}
@@ -119,6 +134,13 @@ const AdminPanelPage = () => {
   const [replyingTicket, setReplyingTicket] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [quickReply, setQuickReply] = useState('');
+  const [ticketPriorityFilter, setTicketPriorityFilter] = useState('all');
+  const [ticketPage, setTicketPage] = useState(1);
+  const TICKET_PAGE_SIZE = 20;
+  const [professorPage, setProfessorPage] = useState(1);
+  const PROFESSOR_PAGE_SIZE = 20;
+  const [auditPage, setAuditPage] = useState(1);
+  const AUDIT_PAGE_SIZE = 30;
 
   const QUICK_REPLIES = [
     { value: '', label: 'Respuesta personalizada...' },
@@ -138,11 +160,11 @@ const AdminPanelPage = () => {
       setError(null);
       const results = await Promise.allSettled([
         adminPanelService.getSummary(),
-        adminPanelService.getTickets(),
+        adminPanelService.getTickets({ page: ticketPage, limit: TICKET_PAGE_SIZE }),
         adminPanelService.getResources(),
         adminPanelService.getAnnouncements(),
-        adminPanelService.getAuditLogs(),
-        adminPanelService.getProfessors(),
+        adminPanelService.getAuditLogs({ page: auditPage, limit: AUDIT_PAGE_SIZE }),
+        adminPanelService.getProfessors({ page: professorPage, limit: PROFESSOR_PAGE_SIZE }),
         adminPanelService.getActiveSessions(),
         adminPanelService.getHistoricalSessions(),
         adminPanelService.getBlockedSessions(),
@@ -179,9 +201,14 @@ const AdminPanelPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [ticketPage, professorPage, auditPage]);
 
   const kpis = useMemo(() => summary?.kpis || {}, [summary]);
+
+  const filteredTickets = useMemo(() => {
+    if (ticketPriorityFilter === 'all') return tickets;
+    return tickets.filter(t => (t.priority || 'medium') === ticketPriorityFilter);
+  }, [tickets, ticketPriorityFilter]);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
 
@@ -319,6 +346,19 @@ const AdminPanelPage = () => {
     }
   };
 
+  const handleTicketPriority = async (id, priority) => {
+    try {
+      setBusy(true);
+      await adminPanelService.updateTicket(id, { priority });
+      await loadData();
+      showToast(`Prioridad cambiada a ${priority === 'high' ? 'alta' : priority === 'medium' ? 'media' : 'baja'}`);
+    } catch (err) {
+      showToast(err.message || 'No se pudo actualizar la prioridad', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleTicketReply = async (ticketId) => {
     if (!replyText.trim() && !quickReply) return;
     const message = quickReply || replyText;
@@ -449,13 +489,16 @@ const AdminPanelPage = () => {
               <div className="p-5">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Tickets Recientes</h2>
                 <div className="space-y-2">
-                  {(summary?.recentTickets || []).length ? summary.recentTickets.map((ticket) => (
+                   {(summary?.recentTickets || []).length ? summary.recentTickets.map((ticket) => (
                     <div key={ticket.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                       <div>
                         <div className="font-medium text-gray-900">{ticket.subject}</div>
                         <div className="text-xs text-gray-500">{formatDate(ticket.createdAt)}</div>
                       </div>
-                      <StatusBadge status={ticket.status} />
+                      <div className="flex items-center gap-2">
+                        <PriorityBadge priority={ticket.priority} />
+                        <StatusBadge status={ticket.status} />
+                      </div>
                     </div>
                   )) : <div className="text-sm text-gray-500">No hay tickets recientes.</div>}
                 </div>
@@ -467,10 +510,34 @@ const AdminPanelPage = () => {
         {activeTab === 'tickets' && (
           <Card>
             <div className="p-5 space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900 font-headline">Tickets ({tickets.length})</h2>
-              <p className="text-sm text-gray-500">Los tickets son creados por los docentes desde su escritorio. Aquí puedes verlos, cambiar su estado o eliminarlos.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 font-headline">Tickets ({filteredTickets.length})</h2>
+                  <p className="text-sm text-gray-500">Los tickets son creados por los docentes desde su escritorio. Aquí puedes verlos, cambiar su estado o eliminarlos.</p>
+                </div>
+                <div className="flex gap-2">
+                  {[
+                    { key: 'all', label: 'Todas' },
+                    { key: 'high', label: 'Alta' },
+                    { key: 'medium', label: 'Media' },
+                    { key: 'low', label: 'Baja' },
+                  ].map(f => (
+                    <button
+                      key={f.key}
+                      onClick={() => setTicketPriorityFilter(f.key)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-colors ${
+                        ticketPriorityFilter === f.key
+                          ? 'bg-gray-900 text-white border-gray-900'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-3 max-h-[36rem] overflow-auto pr-1">
-                {tickets.length ? tickets.map((ticket) => (
+                {filteredTickets.length ? filteredTickets.map((ticket) => (
                   <div key={ticket.id} className="rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -478,6 +545,23 @@ const AdminPanelPage = () => {
                         <div className="text-sm text-gray-500">{ticket.requesterId}</div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        <select
+                          value={ticket.priority || 'medium'}
+                          onChange={(e) => handleTicketPriority(ticket.id, e.target.value)}
+                          disabled={busy}
+                          className={`text-[10px] font-bold px-2 py-1 rounded-full border-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 appearance-none pr-5
+                            ${(ticket.priority === 'high' || !ticket.priority)
+                              ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 focus:ring-red-300'
+                              : ticket.priority === 'medium'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 focus:ring-amber-300'
+                              : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100 focus:ring-green-300'
+                            } disabled:opacity-50`}
+                          style={{ backgroundImage: 'none' }}
+                        >
+                          <option value="high">ALTA</option>
+                          <option value="medium">MEDIA</option>
+                          <option value="low">BAJA</option>
+                        </select>
                         <select
                           value={ticket.status}
                           onChange={(e) => handleTicketStatus(ticket.id, e.target.value)}
@@ -564,8 +648,21 @@ const AdminPanelPage = () => {
                       {formatDate(ticket.createdAt)}
                     </div>
                   </div>
-                )) : <div className="text-sm text-gray-500">No hay tickets registrados.</div>}
+                )) : <div className="text-sm text-gray-500">{ticketPriorityFilter === 'all' ? 'No hay tickets registrados.' : 'No hay tickets con esta prioridad.'}</div>}
               </div>
+              {tickets.length >= TICKET_PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">Página {ticketPage}</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setTicketPage(p => Math.max(1, p - 1))} disabled={ticketPage === 1 || busy}>
+                      Anterior
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setTicketPage(p => p + 1)} disabled={tickets.length < TICKET_PAGE_SIZE || busy}>
+                      Siguiente
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         )}
@@ -747,7 +844,16 @@ const AdminPanelPage = () => {
                       )}
                     </div>
                   )) : <div className="text-sm text-gray-500">No hay profesores registrados.</div>}
+              </div>
+              {professors.length >= PROFESSOR_PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">Página {professorPage}</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setProfessorPage(p => Math.max(1, p - 1))} disabled={professorPage === 1 || busy}>Anterior</Button>
+                    <Button size="sm" variant="outline" onClick={() => setProfessorPage(p => p + 1)} disabled={professors.length < PROFESSOR_PAGE_SIZE || busy}>Siguiente</Button>
+                  </div>
                 </div>
+              )}
               </div>
             </Card>
           </div>
@@ -857,6 +963,15 @@ const AdminPanelPage = () => {
                   </div>
                 )) : <div className="text-sm text-gray-500">No hay logs de auditoría aún.</div>}
               </div>
+              {auditLogs.length >= AUDIT_PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">Página {auditPage}</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setAuditPage(p => Math.max(1, p - 1))} disabled={auditPage === 1 || busy}>Anterior</Button>
+                    <Button size="sm" variant="outline" onClick={() => setAuditPage(p => p + 1)} disabled={auditLogs.length < AUDIT_PAGE_SIZE || busy}>Siguiente</Button>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         )}

@@ -48,10 +48,13 @@ const adminPanelService = {
     }
   },
 
-  getTickets: async () => {
+  getTickets: async (params) => {
     try {
       const adminApi = createAdminApi();
-      const response = await adminApi.get(ADMIN_ENDPOINTS.TICKETS);
+      const url = new URL(ADMIN_ENDPOINTS.TICKETS, window.location.origin);
+      if (params?.page) url.searchParams.set('page', params.page);
+      if (params?.limit) url.searchParams.set('limit', params.limit);
+      const response = await adminApi.get(url.pathname + url.search);
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, 'Error al obtener tickets'));
@@ -188,20 +191,26 @@ const adminPanelService = {
     }
   },
 
-  getAuditLogs: async () => {
+  getAuditLogs: async (params) => {
     try {
       const adminApi = createAdminApi();
-      const response = await adminApi.get(ADMIN_ENDPOINTS.AUDIT_LOGS);
+      const url = new URL(ADMIN_ENDPOINTS.AUDIT_LOGS, window.location.origin);
+      if (params?.page) url.searchParams.set('page', params.page);
+      if (params?.limit) url.searchParams.set('limit', params.limit);
+      const response = await adminApi.get(url.pathname + url.search);
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, 'Error al obtener logs de auditoría'));
     }
   },
 
-  getProfessors: async () => {
+  getProfessors: async (params) => {
     try {
       const adminApi = createAdminApi();
-      const response = await adminApi.get(ADMIN_ENDPOINTS.PROFESSORS);
+      const url = new URL(ADMIN_ENDPOINTS.PROFESSORS, window.location.origin);
+      if (params?.page) url.searchParams.set('page', params.page);
+      if (params?.limit) url.searchParams.set('limit', params.limit);
+      const response = await adminApi.get(url.pathname + url.search);
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, 'Error al obtener profesores'));
