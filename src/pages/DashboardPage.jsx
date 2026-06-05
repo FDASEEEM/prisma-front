@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import { Card, Badge, Button, Alert, Spinner } from '../components/ui';
 import dashboardService from '../services/dashboardService';
+import adminPanelService from '../services/adminPanelService';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [students, setStudents] = useState([]);
   const [materials, setMaterials] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,8 +33,6 @@ const DashboardPage = () => {
         setLoading(true);
         setError(null);
 
-        // En producción, estos datos vendrían del backend
-        // Por ahora usamos datos de demo
         const mockStats = {
           totalStudents: 12,
           activePACIs: 5,
@@ -52,9 +52,17 @@ const DashboardPage = () => {
           { id: 3, title: 'Ciencias - Sistema Digestivo', date: '2025-04-14', students: 2 },
         ];
 
+        let activeAnnouncements = [];
+        try {
+          activeAnnouncements = await adminPanelService.getActiveAnnouncements();
+        } catch (err) {
+          console.warn('No se pudieron cargar anuncios:', err.message);
+        }
+
         setStats(mockStats);
         setStudents(mockStudents);
         setMaterials(mockMaterials);
+        setAnnouncements(Array.isArray(activeAnnouncements) ? activeAnnouncements : []);
       } catch (err) {
         setError(err.message || 'Error al cargar datos del dashboard');
       } finally {
@@ -93,6 +101,38 @@ const DashboardPage = () => {
           <Alert variant="error">
             {error}
           </Alert>
+        )}
+
+        {/* Anuncios Activos */}
+        {announcements.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-headline">
+              📢 Anuncios
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {announcements.map((announcement) => (
+                <Card key={announcement.id} variant="elevated">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-semibold text-gray-900 font-body">{announcement.title}</h3>
+                      <Badge variant="info">{announcement.audience}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{announcement.body}</p>
+                    {announcement.startsAt && (
+                      <div className="text-xs text-gray-400">
+                        Desde: {new Date(announcement.startsAt).toLocaleString('es-CL')}
+                      </div>
+                    )}
+                    {announcement.endsAt && (
+                      <div className="text-xs text-gray-400">
+                        Hasta: {new Date(announcement.endsAt).toLocaleString('es-CL')}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Quick Actions */}

@@ -20,6 +20,9 @@ import NuevaSesionPage from './pages/NuevaSesionPage';
 import SesionPage from './pages/SesionPage';
 import HistorialPage from './pages/HistorialPage';
 import AyudaPage from './pages/AyudaPage';
+import AdminPanelPage from './pages/AdminPanelPage';
+import SoportePage from './pages/SoportePage';
+import ForbiddenPage from './pages/ForbiddenPage';
 
 /**
  * ProtectedRoute
@@ -46,6 +49,31 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const AdminRoute = ({ children }) => {
+  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-on-surface-variant">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  return children;
+};
+
 /**
  * AppContent
  * Contenedor de rutas (separado de App para poder usar useAuth hook)
@@ -55,6 +83,7 @@ const AppContent = () => {
     <Routes>
       {/* Ruta pública */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forbidden" element={<ForbiddenPage />} />
 
       {/* Rutas protegidas */}
       <Route
@@ -120,6 +149,22 @@ const AppContent = () => {
           <ProtectedRoute>
             <AyudaPage />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/soporte"
+        element={
+          <ProtectedRoute>
+            <SoportePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminPanelPage />
+          </AdminRoute>
         }
       />
 

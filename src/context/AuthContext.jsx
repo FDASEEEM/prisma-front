@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const isAdmin = user?.role === 'ADMIN';
 
   // Recuperar sesión al montar el componente
   useEffect(() => {
@@ -23,6 +24,37 @@ export const AuthProvider = ({ children }) => {
       resetAuthRedirectLock();
     }
     setIsLoading(false);
+  }, []);
+
+  // Verificar expiración del token periódicamente (cada 60s)
+  useEffect(() => {
+    const isTokenExpired = (token) => {
+      if (!token) return true;
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        return payload.exp * 1000 < Date.now();
+      } catch {
+        return true;
+      }
+    };
+
+    const checkToken = () => {
+      const token = storageUtils.getToken();
+      if (token && isTokenExpired(token)) {
+        storageUtils.clearSession();
+        setUser(null);
+        setIsAuthenticated(false);
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.replace('/login');
+        }
+      }
+    };
+
+    checkToken();
+    const interval = setInterval(checkToken, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const login = (userData, tokens) => {
@@ -52,6 +84,7 @@ export const AuthProvider = ({ children }) => {
       user,
       isAuthenticated,
       isLoading,
+      isAdmin,
       login,
       logout,
       updateUser,
