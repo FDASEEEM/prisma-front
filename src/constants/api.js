@@ -23,6 +23,7 @@ export const CHAT_ENDPOINTS = {
   CANCEL: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/cancel`,
   DOWNLOAD: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/download`,
   HEALTH: `${CHAT_API_URL}/health`,
+  FEEDBACK: `${CHAT_API_URL}/feedback/approval`,
 };
 
 export const JOBS_ENDPOINTS = {
