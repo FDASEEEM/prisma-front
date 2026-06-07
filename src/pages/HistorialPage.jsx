@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
-import { Badge, Button, Alert, Spinner } from '../components/ui';
+import { Card, Badge, Button, Alert, Spinner } from '../components/ui';
 import jobsService from '../services/jobsService';
 import chatService from '../services/chatService';
 
@@ -63,7 +63,7 @@ const HistorialPage = () => {
 
   return (
     <MainContainer title="Historial de sesiones">
-      <div className="space-y-4">
+      <div className="space-y-8">
 
         {loading && (
           <div className="flex justify-center py-16">
@@ -76,97 +76,104 @@ const HistorialPage = () => {
         )}
 
         {!loading && !error && sessions.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-20 text-stone-400">
+          <div className="flex flex-col items-center gap-3 py-20 text-gray-400">
             <span className="material-symbols-outlined text-5xl">history</span>
-            <p className="text-sm font-medium text-stone-600">Aún no tienes sesiones generadas</p>
+            <p className="text-sm font-medium text-gray-600">Aún no tienes sesiones generadas</p>
             <p className="text-xs">Crea una nueva sesión para comenzar</p>
           </div>
         )}
 
         {!loading && !error && sessions.length > 0 && (
-          <div className="overflow-x-auto rounded-2xl border border-stone-200 dark:border-stone-800">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-stone-100 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
-                  <th className="text-left px-4 py-3 font-semibold text-stone-700 dark:text-stone-300 whitespace-nowrap">Fecha</th>
-                  <th className="text-left px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Prompt</th>
-                  <th className="text-left px-4 py-3 font-semibold text-stone-700 dark:text-stone-300 whitespace-nowrap">Estado</th>
-                  <th className="text-left px-4 py-3 font-semibold text-stone-700 dark:text-stone-300 whitespace-nowrap">ID de sesión</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100 dark:divide-stone-800 bg-white dark:bg-stone-950">
-                {sessions.map((session) => {
-                  const cfg      = resolveStatus(session.phase, session.workflowStatus);
-                  const canWatch = session.phase === 'running' || session.phase === 'awaiting_hitl';
-
-                  return (
-                    <tr
-                      key={session.sessionId}
-                      className="hover:bg-stone-50 dark:hover:bg-stone-900/50 transition-colors"
-                    >
-                      {/* Fecha */}
-                      <td className="px-4 py-3 whitespace-nowrap text-stone-700 dark:text-stone-300">
-                        {formatDate(session.createdAt)}
-                      </td>
-
-                      {/* Prompt */}
-                      <td className="px-4 py-3 max-w-xs">
-                        <span className="block truncate text-stone-900 dark:text-stone-100">
-                          {session.prompt?.trim() || <span className="italic text-stone-400">Sin prompt</span>}
-                        </span>
-                        {session.phase === 'error' && session.error && (
-                          <span className="text-xs text-red-500 block truncate mt-0.5">{session.error}</span>
-                        )}
-                      </td>
-
-                      {/* Estado */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span
-                            className={`material-symbols-outlined text-base ${cfg.spin ? 'animate-spin' : ''} ${
-                              cfg.variant === 'success' ? 'text-green-500' :
-                              cfg.variant === 'warning' ? 'text-amber-500' :
-                              cfg.variant === 'error'   ? 'text-red-500'   :
-                              cfg.variant === 'default' ? 'text-stone-500'  : 'text-lime-500'
-                            }`}
-                            style={cfg.spin ? { animationDuration: '2s' } : {}}
-                          >
-                            {cfg.icon}
-                          </span>
-                          <Badge variant={cfg.variant === 'default' ? undefined : cfg.variant}>
-                            {cfg.label}
-                          </Badge>
-                        </span>
-                      </td>
-
-                      {/* ID */}
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-stone-500 dark:text-stone-400 truncate block max-w-[140px]">
-                          {session.sessionId}
-                        </span>
-                      </td>
-
-                      {/* Acciones */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2 justify-end">
-                          {canWatch && (
-                            <Button
-                              variant="outline"
-                              onClick={() => navigate(`/sesion/${session.sessionId}`)}
-                              icon="open_in_new"
-                            >
-                              Ver
-                            </Button>
-                          )}
-                          <DownloadCell session={session} />
-                        </div>
-                      </td>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-headline">
+              Sesiones generadas
+            </h2>
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 whitespace-nowrap">Fecha</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Prompt</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 whitespace-nowrap">Estado</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 whitespace-nowrap">ID de sesión</th>
+                      <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-right">Acciones</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {sessions.map((session) => {
+                      const cfg      = resolveStatus(session.phase, session.workflowStatus);
+                      const canWatch = session.phase === 'running' || session.phase === 'awaiting_hitl';
+
+                      return (
+                        <tr
+                          key={session.sessionId}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          {/* Fecha */}
+                          <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-600">
+                            {formatDate(session.createdAt)}
+                          </td>
+
+                          {/* Prompt */}
+                          <td className="py-3 px-4 max-w-xs">
+                            <span className="block truncate font-semibold text-gray-900">
+                              {session.prompt?.trim() || <span className="italic text-gray-400 font-normal">Sin prompt</span>}
+                            </span>
+                            {session.phase === 'error' && session.error && (
+                              <span className="text-xs text-red-500 block truncate mt-0.5">{session.error}</span>
+                            )}
+                          </td>
+
+                          {/* Estado */}
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className={`material-symbols-outlined text-base ${cfg.spin ? 'animate-spin' : ''} ${
+                                  cfg.variant === 'success' ? 'text-green-500' :
+                                  cfg.variant === 'warning' ? 'text-amber-500' :
+                                  cfg.variant === 'error'   ? 'text-red-500'   :
+                                  cfg.variant === 'default' ? 'text-gray-500'  : 'text-blue-500'
+                                }`}
+                                style={cfg.spin ? { animationDuration: '2s' } : {}}
+                              >
+                                {cfg.icon}
+                              </span>
+                              <Badge variant={cfg.variant === 'default' ? undefined : cfg.variant}>
+                                {cfg.label}
+                              </Badge>
+                            </span>
+                          </td>
+
+                          {/* ID */}
+                          <td className="py-3 px-4">
+                            <span className="font-mono text-xs text-gray-600 truncate block max-w-[140px]">
+                              {session.sessionId}
+                            </span>
+                          </td>
+
+                          {/* Acciones */}
+                          <td className="py-3 px-4 whitespace-nowrap text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                              {canWatch && (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => navigate(`/sesion/${session.sessionId}`)}
+                                  icon="open_in_new"
+                                >
+                                  Ver
+                                </Button>
+                              )}
+                              <DownloadCell session={session} />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 
