@@ -31,6 +31,16 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        '/feedback': {
+          target: chatTarget,
+          changeOrigin: true,
+          secure: false,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('ngrok-skip-browser-warning', 'true');
+            });
+          },
+        },
       },
     },
   };
