@@ -74,12 +74,13 @@ const chatService = {
   /**
    * Send HITL Decision - Envía la decisión del docente en checkpoint de revisión
    */
-  sendHitlDecision: async (sessionId, approved, reason = null, agentToRetry = null) => {
+  sendHitlDecision: async (sessionId, approved, reason = null) => {
     try {
+      // El agente a reintentar lo decide el workflow (siempre Agente 2 en un rechazo);
+      // el front ya no lo envía. Ver spec 2026-06-09-hitl-review-modal-design.md.
       const response = await chatApi.post(CHAT_ENDPOINTS.HITL(sessionId), {
         approved,
         reason,
-        agent_to_retry: agentToRetry,
       });
       return response.data;
     } catch (error) {
