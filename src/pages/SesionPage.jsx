@@ -6,6 +6,7 @@ import { CHAT_ENDPOINTS } from '../constants/api';
 import storageUtils from '../utils/localStorage';
 import { useActiveSession } from '../context/ActiveSessionContext';
 import FeedbackWidget from '../components/features/FeedbackWidget';
+import HitlReviewModal from '../components/features/HitlReviewModal';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
@@ -29,128 +30,6 @@ const MessageBubble = ({ role, content }) => {
 const Spinner = () => (
   <div className="w-4 h-4 border-2 border-lime-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
 );
-
-// ── HitlAccordion ────────────────────────────────────────────────────────────
-
-const HitlAccordion = ({ title, content }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border border-amber-200 dark:border-amber-800 rounded-xl mb-2 overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full text-left px-4 py-2.5 flex justify-between items-center text-sm font-medium text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors"
-      >
-        {title}
-        <span className="material-symbols-outlined text-base">{open ? 'expand_less' : 'expand_more'}</span>
-      </button>
-      {open && (
-        <div className="px-4 pb-3 pt-1 text-xs text-stone-700 dark:text-stone-300 whitespace-pre-wrap max-h-52 overflow-y-auto bg-white dark:bg-stone-900 border-t border-amber-100 dark:border-amber-800">
-          {content || '(sin datos)'}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── HitlCard ─────────────────────────────────────────────────────────────────
-
-const HitlCard = ({ hitlData, onRespond }) => {
-  const [approved, setApproved] = useState(null);
-  const [reason, setReason] = useState('');
-  const [agentToRetry, setAgentToRetry] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const canSubmit =
-    approved === true || (approved === false && reason.trim() && agentToRetry !== null);
-
-  const handleConfirm = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    await onRespond({
-      approved,
-      reason: approved ? null : reason,
-      agent_to_retry: approved ? null : agentToRetry,
-    });
-  };
-
-  return (
-    <div className="border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-4 my-2">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-xl">warning</span>
-        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-          Revisión requerida — intento {hitlData.attempt} de {hitlData.max_attempts}
-        </p>
-      </div>
-
-      <HitlAccordion title="📋 Análisis PACI (Agente 1)" content={hitlData.perfil_paci} />
-      <HitlAccordion title="📝 Planificación Adaptada (Agente 2)" content={hitlData.planificacion_adaptada} />
-
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={() => { setApproved(true); setAgentToRetry(null); setReason(''); }}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors border ${
-            approved === true
-              ? 'bg-lime-600 text-white border-lime-600'
-              : 'bg-white dark:bg-stone-900 text-lime-700 dark:text-lime-400 border-lime-400 hover:bg-lime-50 dark:hover:bg-lime-950/20'
-          }`}
-        >
-          Aprobar
-        </button>
-        <button
-          onClick={() => setApproved(false)}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors border ${
-            approved === false
-              ? 'bg-red-500 text-white border-red-500'
-              : 'bg-white dark:bg-stone-900 text-red-500 border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20'
-          }`}
-        >
-          Rechazar
-        </button>
-      </div>
-
-      {approved === false && (
-        <div className="mt-3 space-y-2">
-          <textarea
-            className="w-full border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
-            rows={2}
-            placeholder="Describe el problema encontrado (requerido)"
-            value={reason}
-            onChange={e => setReason(e.target.value)}
-          />
-          <p className="text-xs font-medium text-stone-600 dark:text-stone-400">¿Qué se debe corregir?</p>
-          <div className="flex gap-2">
-            {[
-              { id: 1, label: 'Análisis del PACI' },
-              { id: 2, label: 'Adaptación del material' },
-            ].map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setAgentToRetry(id)}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                  agentToRetry === id
-                    ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-100'
-                    : 'bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {approved !== null && (
-        <button
-          onClick={handleConfirm}
-          disabled={!canSubmit || submitting}
-          className="w-full mt-3 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-semibold py-2.5 rounded-xl hover:bg-stone-700 dark:hover:bg-stone-200 disabled:opacity-40 disabled:cursor-not-allowed text-sm transition-colors"
-        >
-          {submitting ? 'Enviando...' : 'Confirmar'}
-        </button>
-      )}
-    </div>
-  );
-};
 
 // ── Phase config ─────────────────────────────────────────────────────────────
 
@@ -347,7 +226,6 @@ const SesionPage = () => {
       sessionId,
       response.approved,
       response.reason,
-      response.agent_to_retry,
     );
     setHitlData(null);
     setPhase('running');
@@ -412,7 +290,7 @@ const SesionPage = () => {
             ))}
 
             {phase === 'awaiting_hitl' && hitlData && (
-              <HitlCard hitlData={hitlData} onRespond={handleHitlRespond} />
+              <HitlReviewModal hitlData={hitlData} onRespond={handleHitlRespond} />
             )}
 
             {phase === 'running' && (

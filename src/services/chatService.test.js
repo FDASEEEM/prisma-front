@@ -5,29 +5,27 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import axios from 'axios';
 import chatService from './chatService';
-import * as authSession from './authSession';
 
-// Mock axios
-vi.mock('axios');
+// chatService.js crea la instancia de axios al evaluar el módulo (axios.create en import),
+// por eso el mock debe devolver la instancia desde una factory hoisted y no en beforeEach.
+const mockChatApi = vi.hoisted(() => ({
+  post: vi.fn(),
+  get: vi.fn(),
+  interceptors: {
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
+  },
+}));
+
+vi.mock('axios', () => ({
+  default: { create: () => mockChatApi },
+}));
 vi.mock('./authSession');
 
 describe('chatService', () => {
-  let mockChatApi;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    // Crear una instancia mock de axios
-    mockChatApi = {
-      post: vi.fn(),
-      get: vi.fn(),
-      interceptors: {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() },
-      },
-    };
-    axios.create.mockReturnValue(mockChatApi);
   });
 
   afterEach(() => {
@@ -113,28 +111,32 @@ describe('chatService', () => {
   });
 
   describe('sendHitlDecision', () => {
-    it('debe enviar decisión de revisión HITL aprobada', async () => {
+    it('debe enviar decisión de revisión HITL aprobada sin agent_to_retry', async () => {
       const mockResponse = { status: 'approved', message: 'Decisión registrada' };
       mockChatApi.post.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await chatService.sendHitlDecision('session_123', true);
 
       expect(result).toEqual(mockResponse);
-      expect(mockChatApi.post).toHaveBeenCalled();
+      const [, body] = mockChatApi.post.mock.calls[0];
+      expect(body).toEqual({ approved: true, reason: null });
+      expect(body).not.toHaveProperty('agent_to_retry');
     });
 
-    it('debe enviar decisión rechazada con motivo', async () => {
+    it('debe enviar decisión rechazada con motivo y sin agent_to_retry', async () => {
       const mockResponse = { status: 'rejected' };
       mockChatApi.post.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await chatService.sendHitlDecision(
         'session_123',
         false,
-        'Texto contiene errores',
-        'grammar_agent'
+        'Texto contiene errores'
       );
 
       expect(result).toEqual(mockResponse);
+      const [, body] = mockChatApi.post.mock.calls[0];
+      expect(body).toEqual({ approved: false, reason: 'Texto contiene errores' });
+      expect(body).not.toHaveProperty('agent_to_retry');
     });
 
     it('debe lanzar error si sesión no existe (404)', async () => {
@@ -244,7 +246,7 @@ describe('chatService', () => {
 
   describe('pollSession', () => {
     it('debe hacer polling del estado de la sesión', async () => {
-      const mockState = { status: 'completed' };
+      const mockState = { phase: 'completed' };
       mockChatApi.get.mockResolvedValueOnce({ data: mockState });
 
       const result = await chatService.pollSession('session_123', 100);
@@ -258,6 +260,6 @@ describe('chatService', () => {
       const promise = chatService.pollSession('session_123', 100, 50);
       
       await expect(promise).rejects.toThrow();
-    }, { timeout: 5000 });
+    }, 5000);
   });
 });
