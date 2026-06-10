@@ -124,6 +124,7 @@ const SesionPage = () => {
       case 'error':
         setPhase('error');
         setError(data.message);
+        if (data.workflow_status) setWorkflowStatus(data.workflow_status);
         setCurrentStep('');
         break;
 
