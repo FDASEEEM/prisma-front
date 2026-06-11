@@ -7,6 +7,7 @@ import storageUtils from '../utils/localStorage';
 import { useActiveSession } from '../context/ActiveSessionContext';
 import FeedbackWidget from '../components/features/FeedbackWidget';
 import HitlReviewModal from '../components/features/HitlReviewModal';
+import ComplianceNotice from '../components/features/ComplianceNotice';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ const PHASE_CONFIG = {
   cancelled:          { label: 'Cancelada',                badge: 'text-stone-700 bg-stone-100 dark:text-stone-300 dark:bg-stone-800',   icon: 'cancel' },
   error_hitl_rejected:{ label: 'Sin aprobación',           badge: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950/40',    icon: 'cancel' },
   error:              { label: 'Error',                    badge: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950/40',        icon: 'error' },
+  compliance_blocked: { label: 'No conforme', badge: 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-950/40', icon: 'gavel' },
 };
 
 // ── SesionPage ───────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ const SesionPage = () => {
   const [messages, setMessages] = useState([]);
   const [hitlData, setHitlData] = useState(null);
   const [error, setError] = useState(null);
+  const [warnings, setWarnings] = useState([]);
   const [currentStep, setCurrentStep] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -114,12 +117,14 @@ const SesionPage = () => {
       case 'completed':
         setPhase('completed');
         setWorkflowStatus(data.workflow_status);
+        setWarnings(data.warnings || []);
         setCurrentStep('');
         break;
 
       case 'error':
         setPhase('error');
         setError(data.message);
+        if (data.workflow_status) setWorkflowStatus(data.workflow_status);
         setCurrentStep('');
         break;
 
@@ -141,6 +146,7 @@ const SesionPage = () => {
         if (state.hitl_data) setHitlData(state.hitl_data);
         if (state.error) setError(state.error);
         setWorkflowStatus(state.workflow_status || null);
+        setWarnings(state.warnings || []);
         setPhase(state.phase);
       } catch (err) {
         if (cancelled) return;
@@ -178,6 +184,7 @@ const SesionPage = () => {
         if (state.hitl_data) setHitlData(state.hitl_data);
         if (state.error) setError(state.error);
         setWorkflowStatus(state.workflow_status || null);
+        setWarnings(state.warnings || []);
         setPhase(state.phase);
 
         // No conectar SSE si la sesión ya terminó
@@ -232,6 +239,7 @@ const SesionPage = () => {
   };
 
   const phaseKey =
+    phase === 'error'     && workflowStatus === 'compliance_blocked' ? 'compliance_blocked' :
     phase === 'completed' && workflowStatus === 'degraded'      ? 'completed_degraded' :
     phase === 'error'     && workflowStatus === 'cancelled'      ? 'cancelled' :
     phase === 'error'     && workflowStatus === 'hitl_rejected'  ? 'error_hitl_rejected' :
@@ -314,6 +322,7 @@ const SesionPage = () => {
                   {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
                 </button>
+                {warnings.length > 0 && <ComplianceNotice warnings={warnings} />}
                 <FeedbackWidget sessionId={sessionId} />
               </div>
             )}
@@ -377,7 +386,19 @@ const SesionPage = () => {
               </div>
             )}
 
-            {phase === 'error' && workflowStatus !== 'hitl_rejected' && (
+            {phase === 'error' && workflowStatus === 'compliance_blocked' && (
+              <div className="mt-2">
+                <ComplianceNotice blocked reason={error} />
+                <button
+                  onClick={() => navigate('/nueva-sesion')}
+                  className="mt-3 text-xs font-semibold text-orange-700 dark:text-orange-400 underline hover:text-orange-900 dark:hover:text-orange-200"
+                >
+                  Iniciar nuevo proceso con un documento conforme
+                </button>
+              </div>
+            )}
+
+            {phase === 'error' && workflowStatus !== 'hitl_rejected' && workflowStatus !== 'compliance_blocked' && (
               <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-sm text-red-700 dark:text-red-400 mt-2">
                 <p className="font-semibold mb-1 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-base">error</span>

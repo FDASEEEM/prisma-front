@@ -74,7 +74,7 @@ export const ActiveSessionProvider = ({ children }) => {
             break;
           case 'error':
             source.close(); eventSourceRef.current = null;
-            next = { ...prev, phase: 'error', error: data.message, currentStep: '' };
+            next = { ...prev, phase: 'error', error: data.message, workflowStatus: data.workflow_status || prev.workflowStatus, currentStep: '' };
             break;
         }
         save(next);

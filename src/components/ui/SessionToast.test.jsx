@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import SessionToast from './SessionToast';
 
@@ -300,5 +300,53 @@ describe('SessionToast', () => {
         downloadButton.click();
       }
     });
+  });
+
+  // NOTA: este archivo usa vi.useFakeTimers() + waitFor en varios tests, combinación
+  // que se deadlockea (waitFor sondea con timers congelados). Los tests nuevos asertan
+  // de forma síncrona para evitarlo.
+  it('debe mostrar un bloqueo normativo distinto del error de sistema', () => {
+    useActiveSession.mockReturnValue({
+      activeSession: {
+        sessionId: 'session_123',
+        phase: 'error',
+        workflowStatus: 'compliance_blocked',
+        error: 'El PACI no es procesable — informe vencido. (Decreto 170/2010)',
+      },
+      stopTracking: vi.fn(),
+    });
+
+    render(
+      <BrowserRouter>
+        <SessionToast />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Documento no conforme a normativa')).toBeInTheDocument();
+    expect(screen.getByText(/Decreto 170\/2010/)).toBeInTheDocument();
+    expect(screen.queryByText('Error en la generación')).not.toBeInTheDocument();
+  });
+
+  it('auto-cierra el bloqueo/error sin crashear (regresión TDZ de handleDismiss)', () => {
+    const stopTrackingMock = vi.fn();
+    useActiveSession.mockReturnValue({
+      activeSession: {
+        sessionId: 'session_123',
+        phase: 'error',
+        workflowStatus: 'compliance_blocked',
+        error: 'bloqueo',
+      },
+      stopTracking: stopTrackingMock,
+    });
+
+    render(
+      <BrowserRouter>
+        <SessionToast />
+      </BrowserRouter>
+    );
+
+    act(() => { vi.advanceTimersByTime(13000); });
+
+    expect(stopTrackingMock).toHaveBeenCalled();
   });
 });
