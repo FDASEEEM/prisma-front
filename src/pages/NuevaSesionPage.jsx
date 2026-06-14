@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import { useActiveSession } from '../context/ActiveSessionContext';
 import { Button, Alert } from '../components/ui';
-import jobsService from '../services/jobsService';
 import chatService from '../services/chatService';
 
 const STEPS = [
@@ -114,9 +113,11 @@ const NuevaSesionPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await jobsService.createJob(paciFile, planningFile, prompt.trim());
-      startTracking(result.jobId);
-      navigate(`/sesion/${result.jobId}`);
+      // Camino directo al workflow (HITL/chat): corre el flujo in-process en el
+      // contenedor del workflow (modo local). No usa ms-docs/S3/Lambda.
+      const result = await chatService.startSession(paciFile, planningFile, prompt.trim());
+      startTracking(result.session_id);
+      navigate(`/sesion/${result.session_id}`);
     } catch (err) {
       setError(err.message);
     } finally {
