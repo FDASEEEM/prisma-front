@@ -1,70 +1,74 @@
-# Getting Started with Create React App
+# P.R.I.S.M.A. — Frontend (SPA + puerta única)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+SPA en **React 19 + Vite** que, además de ser la interfaz del docente, actúa como
+**puerta única** del sistema P.R.I.S.M.A.: en producción se sirve con **nginx**, que
+hace de *reverse-proxy* hacia los microservicios. El navegador solo habla con el front.
 
-## Available Scripts
+> **P.R.I.S.M.A.** apoya a docentes del sistema escolar chileno en la generación de
+> material y rúbricas de evaluación adaptadas para estudiantes con Necesidades
+> Educativas Especiales (NEE), a partir del PACI y un material base, mediante un motor
+> de IA multi-agente. Marcos normativos: Decretos 170/2010, 83/2015 y 67/2018.
 
-In the project directory, you can run:
+## Arquitectura del sistema
 
-### `npm start`
+| Componente | Stack | Puerto | Rol |
+|------------|-------|--------|-----|
+| **prisma-front** (este repo) | React 19 + Vite + nginx | 80 | SPA + reverse-proxy |
+| prisma-ms-users | NestJS 10 + Prisma 5 | 3001 | Auth + perfil docente |
+| prisma-ms-docs | NestJS 10 + Prisma 5 | 3000 | Documentos / jobs PACI |
+| prisma-ms-perfil-alumno | NestJS 11 + Prisma 5 | 3005 | Estudiantes y perfiles PACI |
+| prisma-adminpanel | NestJS 10 + Prisma 5 | 3004 | API panel de administración |
+| prisma_workflow | Python + FastAPI + google-adk | 8000 | Motor de IA multi-agente (Gemini) |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Identidad común vía **Supabase JWT**. El front lo obtiene en ms-users y lo envía como
+`Authorization: Bearer <jwt>` a todos los servicios.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Desarrollo local
 
-### `npm test`
+```bash
+npm install
+npm run dev        # dev server en :3002
+npm run build      # build de producción → dist/
+npm run preview    # sirve el build
+npm test           # Vitest
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Variables (`.env`): `VITE_API_BASE_URL` (users), `VITE_DOCS_API_URL` (docs),
+`VITE_ADMIN_API_URL` (admin), `VITE_API_PERFIL_ALUMNO_URL` (perfil), y el chat por
+proxy de Vite (`CHAT_BACKEND_URL`).
 
-### `npm run build`
+### Levantar todo el stack en local (Docker Compose)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Desde la carpeta `EP2/`:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+docker compose up --build      # construye y levanta los 6 componentes
+docker compose logs -f front   # ver logs de un servicio
+docker compose down            # apagar
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Despliegue (rama `aws-deploy`)
 
-### `npm run eject`
+El despliegue DevOps vive en la rama **`aws-deploy`**, aislada de `main`/`develop`:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- **Docker:** `Dockerfile` multi-etapa → build Vite + runtime nginx (reverse-proxy,
+  `nginx.conf.template`).
+- **CI/CD:** `.github/workflows/deploy-ecr.yml` → en push a `aws-deploy` construye la
+  imagen, la publica en **Amazon ECR** (`:<sha>` + `:latest`) y fuerza el redeploy del
+  service ECS (`update-service --force-new-deployment`).
+- **Infra:** ECS Fargate, una sola task con los 6 contenedores comunicados por
+  `localhost`; Security Group con inbound solo TCP 80; VPC default.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Detalle completo y justificación de cada decisión en **[`INFORME.md`](./INFORME.md)**.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Estructura
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+src/
+  pages/        Login, Dashboard, NuevaSesion, Sesion, Historial, Admin, Soporte
+  services/     authService, chatService, jobsService, paciService, adminPanelService
+  context/      AuthContext, ActiveSessionContext
+  components/   UI + layout
+Dockerfile            build Vite → nginx (puerta única)
+nginx.conf.template   reverse-proxy a los microservicios
+```

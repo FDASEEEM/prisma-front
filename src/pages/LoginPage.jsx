@@ -116,6 +116,15 @@ const LoginPage = () => {
             <p className="text-on-surface-variant italic mt-2">Modelo Agéntico con 4 IAs</p>
           </div>
 
+          {/* Aviso de despliegue para evaluación DevOps */}
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300/60 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-950/30 p-4">
+            <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-xl mt-0.5">deployed_code</span>
+            <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+              <span className="font-semibold">Entorno deployado para evaluación final de DevOps.</span>{' '}
+              El contenido y las funcionalidades pueden variar respecto a la versión final del producto.
+            </p>
+          </div>
+
           {/* Login Card */}
           <div className="bg-surface-container-lowest p-10 rounded-xl shadow-[0_20px_60px_-15px_rgba(35,26,7,0.06)] border border-outline-variant/15">
             {/* Header */}
