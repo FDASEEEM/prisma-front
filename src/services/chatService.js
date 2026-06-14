@@ -95,13 +95,39 @@ const chatService = {
   },
 
   /**
-   * Download Result - Descarga el archivo generado
+   * Download Result - Descarga el archivo generado.
+   * Soporta los dos modos del backend:
+   *  - Modo AWS: responde JSON { url } con una presigned URL de S3 → abre la URL.
+   *  - Modo local: sirve el .docx directo (FileResponse) → descarga el blob.
    */
   downloadResult: async (sessionId) => {
     try {
-      const response = await chatApi.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId));
-      const { url } = response.data;
-      window.open(url, '_blank');
+      const response = await chatApi.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId), {
+        responseType: 'blob',
+      });
+
+      const contentType = response.headers['content-type'] || '';
+
+      // Modo AWS: el cuerpo es JSON { url } (vino como blob por responseType).
+      if (contentType.includes('application/json')) {
+        const { url } = JSON.parse(await response.data.text());
+        window.open(url, '_blank');
+        return { success: true };
+      }
+
+      // Modo local: el cuerpo es el .docx → forzamos la descarga del blob.
+      const disposition = response.headers['content-disposition'] || '';
+      const match = /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(disposition);
+      const filename = match ? decodeURIComponent(match[1]) : `rubrica_${sessionId}.docx`;
+
+      const blobUrl = window.URL.createObjectURL(response.data);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
       return { success: true };
     } catch (error) {
       if (error.response?.status === 404) {
