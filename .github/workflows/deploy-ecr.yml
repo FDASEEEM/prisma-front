@@ -4,14 +4,15 @@ name: Build & Push to ECR
 #
 # GitHub Secrets requeridos (Settings → Secrets and variables → Actions):
 #   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION
-#   + las VITE_* del front (se HORNEAN en build-time, ver nota abajo)
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY  (se HORNEAN en build-time)
 #
 # ⚠️ AWS Academy / Learner Lab: las credenciales son TEMPORALES (~4 h) y cambian
 #    cada vez que reinicias el lab. Debés ACTUALIZAR los secrets AWS en cada sesión
 #    o el workflow fallará con "ExpiredTokenException".
 #
-# ⚠️ Las VITE_* quedan embebidas en el bundle al construir → si cambian, hay que
-#    reconstruir la imagen. Por eso van como --build-arg, no como env de runtime.
+# Nota: las URLs de los microservicios NO se hornean — el front llama same-origin
+# y el nginx de la imagen hace de reverse-proxy (ver nginx.conf.template). Por eso
+# acá solo van los 2 secrets de Supabase.
 
 on:
   push:
@@ -51,11 +52,6 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build \
-            --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL }}" \
-            --build-arg VITE_DOCS_API_URL="${{ secrets.VITE_DOCS_API_URL }}" \
-            --build-arg VITE_API_PERFIL_ALUMNO_URL="${{ secrets.VITE_API_PERFIL_ALUMNO_URL }}" \
-            --build-arg VITE_ADMIN_API_URL="${{ secrets.VITE_ADMIN_API_URL }}" \
-            --build-arg VITE_CHAT_API_URL="${{ secrets.VITE_CHAT_API_URL }}" \
             --build-arg VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
             --build-arg VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \

@@ -3,9 +3,13 @@
  * Configuración centralizada para todos los endpoints de la aplicación
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000';
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:3004';
+// Usamos ?? (no ||) para que un valor VACÍO se respete: en producción las VITE_*
+// de los micros se buildean vacías → el front llama same-origin (/api/..., /chat/...)
+// y el nginx del propio front hace de reverse-proxy hacia cada microservicio.
+// En dev tu .env define las URLs localhost, así que sigue apuntando cross-origin.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL ?? 'http://localhost:3000';
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL ?? 'http://localhost:3004';
 const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? '';
 
 export const AUTH_ENDPOINTS = {
