@@ -1,0 +1,64 @@
+name: Build & Push to ECR
+
+# Construye la imagen nginx del front y la sube a Amazon ECR en push a develop.
+#
+# GitHub Secrets requeridos (Settings → Secrets and variables → Actions):
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION
+#   + las VITE_* del front (se HORNEAN en build-time, ver nota abajo)
+#
+# ⚠️ AWS Academy / Learner Lab: las credenciales son TEMPORALES (~4 h) y cambian
+#    cada vez que reinicias el lab. Debés ACTUALIZAR los secrets AWS en cada sesión
+#    o el workflow fallará con "ExpiredTokenException".
+#
+# ⚠️ Las VITE_* quedan embebidas en el bundle al construir → si cambian, hay que
+#    reconstruir la imagen. Por eso van como --build-arg, no como env de runtime.
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  ECR_REPOSITORY: prisma-front
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" \
+            || aws ecr create-repository --repository-name "$ECR_REPOSITORY"
+
+      - name: Build, tag & push image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL }}" \
+            --build-arg VITE_DOCS_API_URL="${{ secrets.VITE_DOCS_API_URL }}" \
+            --build-arg VITE_API_PERFIL_ALUMNO_URL="${{ secrets.VITE_API_PERFIL_ALUMNO_URL }}" \
+            --build-arg VITE_ADMIN_API_URL="${{ secrets.VITE_ADMIN_API_URL }}" \
+            --build-arg VITE_CHAT_API_URL="${{ secrets.VITE_CHAT_API_URL }}" \
+            --build-arg VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+            --build-arg VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            -t "$REGISTRY/$ECR_REPOSITORY:latest" .
+          docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$REGISTRY/$ECR_REPOSITORY:latest"
