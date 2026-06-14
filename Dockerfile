@@ -3,15 +3,13 @@
 # PUERTA ÚNICA (reverse-proxy) hacia los microservicios. Ver nginx.conf.template.
 # Multi-stage: (1) build estático, (2) runtime nginx.
 #
-# Solo SUPABASE se hornea como build-arg (no dependen de ECS). Las URLs de los
-# micros se buildean VACÍAS (.env.production) → el front llama same-origin
-# (/api/..., /paci-profiles, /chat) y nginx rutea. Así la imagen se construye
-# UNA vez y no hay que rehornear si cambian las direcciones internas.
+# El front NO usa Supabase client-side (auth va vía ms-users), así que NO hace
+# falta ningún build-arg. Las URLs de los micros se buildean VACÍAS
+# (.env.production) → el front llama same-origin (/api/..., /paci-profiles, /chat)
+# y nginx rutea. La imagen se construye UNA vez y no se rehornea si cambian las
+# direcciones internas.
 #
-#   docker build \
-#     --build-arg VITE_SUPABASE_URL=https://<proj>.supabase.co \
-#     --build-arg VITE_SUPABASE_ANON_KEY=<anon-key> \
-#     -t prisma-front .
+#   docker build -t prisma-front .
 # ──────────────────────────────────────────────────────────────────────────
 
 # Stage 1: build
@@ -23,12 +21,6 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-
-# Solo Supabase va horneado (es público y no depende de la red de ECS).
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
-    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
 # Forzamos las URLs de los micros a vacío en el build de producción → same-origin.
 # Vite lee .env.production en `vite build`; con valor vacío, el front emite
