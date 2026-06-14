@@ -18,7 +18,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# npm install (no npm ci): el front tiene deps con bindings nativos/wasm cuyas
+# optionalDependencies son por-plataforma. El lock se versiona desde Windows y el
+# build corre en Linux, así que la sincronía estricta de `npm ci` falla por las
+# opcionales de Linux ausentes. `npm install` resuelve las correctas en el contenedor.
+RUN npm install --no-audit --no-fund
 
 COPY . .
 
