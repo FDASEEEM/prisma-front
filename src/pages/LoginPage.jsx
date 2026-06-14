@@ -121,7 +121,8 @@ const LoginPage = () => {
             <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-xl mt-0.5">deployed_code</span>
             <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
               <span className="font-semibold">Entorno deployado para evaluación final de DevOps.</span>{' '}
-              El contenido y las funcionalidades pueden variar respecto a la versión final del producto.
+              El contenido y las funcionalidades pueden variar respecto a la versión final del producto.{' '}
+              <span className="font-semibold">(usando task revision 6)</span>
             </p>
           </div>
 
