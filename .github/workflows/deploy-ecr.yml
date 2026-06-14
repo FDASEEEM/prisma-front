@@ -5,6 +5,10 @@ name: Build & Push to ECR
 # GitHub Secrets requeridos (Settings → Secrets and variables → Actions):
 #   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION
 #
+# GitHub Variables opcionales (Settings → Secrets and variables → Actions → Variables):
+#   ECS_CLUSTER (default 'prisma-cluster'), ECS_SERVICE (default 'prisma-app')
+#   → ajustalos si tu cluster/service tienen otro nombre.
+#
 # ⚠️ AWS Academy / Learner Lab: las credenciales son TEMPORALES (~4 h) y cambian
 #    cada vez que reinicias el lab. Debés ACTUALIZAR los secrets AWS en cada sesión
 #    o el workflow fallará con "ExpiredTokenException".
@@ -12,6 +16,10 @@ name: Build & Push to ECR
 # Nota: el front no necesita build-args. Las URLs de los micros van same-origin
 # (nginx de la imagen hace de reverse-proxy, ver nginx.conf.template) y el front
 # no usa Supabase client-side (auth vía ms-users).
+#
+# Tras pushear la imagen, se fuerza un redeploy del service ECS. Como los 6
+# contenedores viven en UNA sola task/service, ese único force-new-deployment
+# reinicia TODO el stack con sus imágenes :latest más recientes.
 
 on:
   push:
@@ -55,3 +63,19 @@ jobs:
             -t "$REGISTRY/$ECR_REPOSITORY:latest" .
           docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker push "$REGISTRY/$ECR_REPOSITORY:latest"
+
+      - name: Force ECS redeploy
+        env:
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'prisma-cluster' }}
+          ECS_SERVICE: ${{ vars.ECS_SERVICE || 'prisma-app' }}
+        run: |
+          # Un solo service (prisma-app) corre los 6 contenedores → este redeploy
+          # los reinicia a todos con sus imágenes :latest recién pusheadas.
+          # Si desiredCount=0 (demo apagada) no levanta tasks, pero no falla.
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment \
+            --no-cli-pager \
+            --query 'service.{name:serviceName,desired:desiredCount,running:runningCount}' \
+            --output table
