@@ -122,7 +122,7 @@ const LoginPage = () => {
             <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
               <span className="font-semibold">Entorno deployado para evaluación final de DevOps.</span>{' '}
               El contenido y las funcionalidades pueden variar respecto a la versión final del producto.{' '}
-              <span className="font-semibold">(usando task revision 7 !!!!!!!)</span>
+              <span className="font-semibold">(usando task revision 8 !!)</span>
             </p>
           </div>
 
