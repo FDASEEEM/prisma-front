@@ -22,7 +22,7 @@ describe('colegioService', () => {
   describe('getAll', () => {
     it('should fetch colegios with pagination', async () => {
       const mockData = { data: [{ id: '1' }], total: 1, page: 1, limit: 20, totalPages: 1 };
-      (bffApi.getColegios as any).mockResolvedValue(mockData);
+      bffApi.getColegios.mockResolvedValue(mockData);
 
       const result = await colegioService.getAll({ page: '1', limit: '20' });
 
@@ -31,7 +31,7 @@ describe('colegioService', () => {
     });
 
     it('should handle errors', async () => {
-      (bffApi.getColegios as any).mockRejectedValue(new Error('Error de red'));
+      bffApi.getColegios.mockRejectedValue(new Error('Error de red'));
 
       await expect(colegioService.getAll()).rejects.toThrow('Error de red');
     });
@@ -40,7 +40,7 @@ describe('colegioService', () => {
   describe('getById', () => {
     it('should fetch a colegio by id', async () => {
       const mockColegio = { id: 'colegio-1', nombre: 'Test' };
-      (bffApi.getColegioById as any).mockResolvedValue(mockColegio);
+      bffApi.getColegioById.mockResolvedValue(mockColegio);
 
       const result = await colegioService.getById('colegio-1');
 
@@ -53,7 +53,7 @@ describe('colegioService', () => {
     it('should create a colegio', async () => {
       const payload = { nombre: 'Nuevo', email: 'nuevo@test.cl' };
       const mockResponse = { colegio: { id: 'new-id' }, admin: { id: 'admin-id' } };
-      (bffApi.createColegio as any).mockResolvedValue(mockResponse);
+      bffApi.createColegio.mockResolvedValue(mockResponse);
 
       const result = await colegioService.create(payload);
 
@@ -65,7 +65,7 @@ describe('colegioService', () => {
   describe('update', () => {
     it('should update a colegio', async () => {
       const payload = { nombre: 'Actualizado' };
-      (bffApi.updateColegio as any).mockResolvedValue({ id: '1', nombre: 'Actualizado' });
+      bffApi.updateColegio.mockResolvedValue({ id: '1', nombre: 'Actualizado' });
 
       const result = await colegioService.update('1', payload);
 
@@ -76,7 +76,7 @@ describe('colegioService', () => {
 
   describe('deactivate', () => {
     it('should deactivate a colegio', async () => {
-      (bffApi.deactivateColegio as any).mockResolvedValue({ id: '1', activo: false });
+      bffApi.deactivateColegio.mockResolvedValue({ id: '1', activo: false });
 
       const result = await colegioService.deactivate('1');
 
@@ -88,7 +88,7 @@ describe('colegioService', () => {
   describe('getStats', () => {
     it('should fetch stats for a colegio', async () => {
       const mockStats = { totalUsers: 10, activeUsers: 8 };
-      (bffApi.getColegioStats as any).mockResolvedValue(mockStats);
+      bffApi.getColegioStats.mockResolvedValue(mockStats);
 
       const result = await colegioService.getStats('colegio-1');
 
@@ -100,7 +100,7 @@ describe('colegioService', () => {
   describe('getProfessors', () => {
     it('should fetch professors for a colegio', async () => {
       const mockProfessors = { data: [{ id: '1', nombreCompleto: 'Prof 1' }] };
-      (bffApi.getColegioProfessors as any).mockResolvedValue(mockProfessors);
+      bffApi.getColegioProfessors.mockResolvedValue(mockProfessors);
 
       const result = await colegioService.getProfessors('colegio-1', { page: '1' });
 
