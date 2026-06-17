@@ -5,7 +5,7 @@ import { handleAuthFailure } from './authSession';
 
 const createAdminApi = () => {
   const adminApi = axios.create({
-    baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3006',
+    baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3010',
     headers: {
       'Content-Type': 'application/json',
     },

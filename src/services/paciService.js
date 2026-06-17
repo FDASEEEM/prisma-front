@@ -6,7 +6,7 @@
 import axios from 'axios';
 import storageUtils from '../utils/localStorage';
 
-const PACI_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3006';
+const PACI_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';
 
 const paciApi = axios.create({
   baseURL: PACI_BASE_URL,
