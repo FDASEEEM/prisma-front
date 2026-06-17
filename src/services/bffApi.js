@@ -165,6 +165,38 @@ const bffApi = {
     }
   },
 
+  getColegioAdmins: async (id) => {
+    try {
+      const api = createBffApi();
+      const response = await api.get(`/api/colegios/${id}/admins`);
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener admins del colegio'));
+    }
+  },
+
+  setUserActive: async (userId, active) => {
+    try {
+      const api = createBffApi();
+      const response = await api.patch(`/api/admin/users/${userId}/active`, { active });
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, active ? 'Error al activar usuario' : 'Error al desactivar usuario'));
+    }
+  },
+
+  resetUserPassword: async (userId, newPassword) => {
+    try {
+      const api = createBffApi();
+      const response = await api.post(`/api/admin/users/${userId}/reset-password`, {
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al resetear password'));
+    }
+  },
+
   // Professors
   getProfessors: async (params) => {
     try {

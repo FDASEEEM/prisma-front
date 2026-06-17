@@ -1,7 +1,7 @@
 /**
  * API Endpoints & URLs
  * Configuración centralizada para todos los endpoints de la aplicación
- * Todas las llamadas pasan por el BFF (prisma-bff) en :3006
+ * Todas las llamadas pasan por el BFF (prisma-bff) en :3010
  */
 
 const BFF_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';
@@ -38,6 +38,10 @@ export const JOBS_ENDPOINTS = {
 export const ADMIN_ENDPOINTS = {
   SUMMARY: `${BFF_BASE_URL}/api/admin/dashboard/summary`,
   ME: `${BFF_BASE_URL}/api/admin/me`,
+  USERS: `${BFF_BASE_URL}/api/admin/users`,
+  USER_ACTIVE: (id) => `${BFF_BASE_URL}/api/admin/users/${id}/active`,
+  USER_RESET_PASSWORD: (id) => `${BFF_BASE_URL}/api/admin/users/${id}/reset-password`,
+  USER_ROLE: (id) => `${BFF_BASE_URL}/api/admin/users/${id}/role`,
   TICKETS: `${BFF_BASE_URL}/api/admin/tickets`,
   TICKET: (id) => `${BFF_BASE_URL}/api/admin/tickets/${id}`,
   TICKETS_BY_REQUESTER: (requesterId) => `${BFF_BASE_URL}/api/admin/tickets/by-requester/${requesterId}`,
@@ -66,6 +70,7 @@ export const SUPERADMIN_ENDPOINTS = {
   COLEGIO: (id) => `${BFF_BASE_URL}/api/colegios/${id}`,
   COLEGIO_STATS: (id) => `${BFF_BASE_URL}/api/colegios/${id}/stats`,
   COLEGIO_PROFESSORS: (id) => `${BFF_BASE_URL}/api/colegios/${id}/professors`,
+  COLEGIO_ADMINS: (id) => `${BFF_BASE_URL}/api/colegios/${id}/admins`,
 };
 
 export const API_URLS = {
