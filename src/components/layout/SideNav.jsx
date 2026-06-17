@@ -3,13 +3,15 @@
  * Navegación lateral (desktop) con responsive
  */
 
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../ui';
+import { Button, Modal } from '../ui';
 
 const SideNav = () => {
   const location = useLocation();
   const { logout, isAdmin, isSuperAdmin } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navItems = [
     { path: '/nueva-sesion', label: 'Nueva Sesión', icon: 'add_circle' },
@@ -22,6 +24,19 @@ const SideNav = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    logout();
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
 
   return (
     <>
@@ -76,7 +91,7 @@ const SideNav = () => {
             <span>Ayuda</span>
           </Link>
           <button
-            onClick={logout}
+            onClick={handleLogoutClick}
             className="flex items-center gap-4 p-3 rounded-full text-stone-600 dark:text-stone-400 hover:translate-x-1 transition-transform duration-200 hover:text-red-600 font-medium text-sm w-full"
           >
             <span className="material-symbols-outlined">logout</span>
@@ -89,6 +104,28 @@ const SideNav = () => {
       <button className="md:hidden fixed bottom-6 right-6 z-50 bg-primary text-on-primary p-4 rounded-full shadow-lg hover:shadow-xl transition-all">
         <span className="material-symbols-outlined">menu</span>
       </button>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={showLogoutConfirm}
+        onClose={handleCancelLogout}
+        title="Confirmar cierre de sesión"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-on-surface-variant">
+            ¿Estás seguro que deseas cerrar sesión? Tendrás que volver a iniciar sesión para acceder a tu cuenta.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={handleCancelLogout}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleConfirmLogout}>
+              Sí, cerrar sesión
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
