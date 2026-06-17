@@ -5,7 +5,7 @@ import { handleAuthFailure } from './authSession';
 
 const createAdminApi = () => {
   const adminApi = axios.create({
-    baseURL: import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:3004',
+    baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3010',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -15,6 +15,12 @@ const createAdminApi = () => {
     const token = storageUtils.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Add timestamp to prevent caching
+    if (config.method === 'get' && config.params) {
+      config.params._t = Date.now();
+    } else if (config.method === 'get') {
+      config.params = { _t: Date.now() };
     }
     return config;
   });
@@ -51,10 +57,7 @@ const adminPanelService = {
   getTickets: async (params) => {
     try {
       const adminApi = createAdminApi();
-      const url = new URL(ADMIN_ENDPOINTS.TICKETS, window.location.origin);
-      if (params?.page) url.searchParams.set('page', params.page);
-      if (params?.limit) url.searchParams.set('limit', params.limit);
-      const response = await adminApi.get(url.pathname + url.search);
+      const response = await adminApi.get(ADMIN_ENDPOINTS.TICKETS, { params });
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, 'Error al obtener tickets'));
@@ -194,10 +197,7 @@ const adminPanelService = {
   getAuditLogs: async (params) => {
     try {
       const adminApi = createAdminApi();
-      const url = new URL(ADMIN_ENDPOINTS.AUDIT_LOGS, window.location.origin);
-      if (params?.page) url.searchParams.set('page', params.page);
-      if (params?.limit) url.searchParams.set('limit', params.limit);
-      const response = await adminApi.get(url.pathname + url.search);
+      const response = await adminApi.get(ADMIN_ENDPOINTS.AUDIT_LOGS, { params });
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, 'Error al obtener logs de auditoría'));
@@ -207,10 +207,7 @@ const adminPanelService = {
   getProfessors: async (params) => {
     try {
       const adminApi = createAdminApi();
-      const url = new URL(ADMIN_ENDPOINTS.PROFESSORS, window.location.origin);
-      if (params?.page) url.searchParams.set('page', params.page);
-      if (params?.limit) url.searchParams.set('limit', params.limit);
-      const response = await adminApi.get(url.pathname + url.search);
+      const response = await adminApi.get(ADMIN_ENDPOINTS.PROFESSORS, { params });
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, 'Error al obtener profesores'));

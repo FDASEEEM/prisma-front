@@ -21,6 +21,7 @@ import SesionPage from './pages/SesionPage';
 import HistorialPage from './pages/HistorialPage';
 import AyudaPage from './pages/AyudaPage';
 import AdminPanelPage from './pages/AdminPanelPage';
+import ColegiosPage from './pages/ColegiosPage';
 import SoportePage from './pages/SoportePage';
 import ForbiddenPage from './pages/ForbiddenPage';
 
@@ -68,6 +69,31 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!isAdmin) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  return children;
+};
+
+const SuperAdminRoute = ({ children }) => {
+  const { isAuthenticated, isLoading, isSuperAdmin } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-on-surface-variant">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isSuperAdmin) {
     return <Navigate to="/forbidden" replace />;
   }
 
@@ -165,6 +191,14 @@ const AppContent = () => {
           <AdminRoute>
             <AdminPanelPage />
           </AdminRoute>
+        }
+      />
+      <Route
+        path="/colegios"
+        element={
+          <SuperAdminRoute>
+            <ColegiosPage />
+          </SuperAdminRoute>
         }
       />
 

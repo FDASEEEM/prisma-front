@@ -1,10 +1,9 @@
 /**
  * Auth Service
- * Funciones para autenticación con la API
+ * Funciones para autenticación con el BFF
  */
 
-import api from './api';
-import { AUTH_ENDPOINTS } from '../constants/api';
+import bffApi from './bffApi';
 import {
   getAuthErrorMessage,
   isInvalidCredentialsError,
@@ -16,31 +15,20 @@ const authService = {
    */
   login: async (email, password) => {
     try {
-      const response = await api.post(AUTH_ENDPOINTS.LOGIN, {
-        email,
-        password,
-      });
-
-      const { access_token, refresh_token, user } = response.data;
+      const response = await bffApi.login(email, password);
 
       return {
-        user,
+        user: response.user,
         tokens: {
-          access_token,
-          refresh_token,
+          access_token: response.access_token,
+          refresh_token: response.refresh_token,
         },
       };
     } catch (error) {
-      if (error.response?.status === 401) {
-        if (isInvalidCredentialsError(error.response?.data)) {
-          throw new Error('Correo o contraseña incorrectos');
-        }
-
-        throw new Error(
-          getAuthErrorMessage(error.response?.data, 'Tu sesión expiró. Vuelve a iniciar sesión.'),
-        );
+      if (error.message?.includes('401') || error.message?.includes('incorrectos')) {
+        throw new Error('Correo o contraseña incorrectos');
       }
-      throw new Error(error.response?.data?.message || 'Error al iniciar sesión');
+      throw new Error(error.message || 'Error al iniciar sesión');
     }
   },
 
@@ -49,27 +37,17 @@ const authService = {
    */
   register: async (email, password, nombre, rut) => {
     try {
-      const response = await api.post(AUTH_ENDPOINTS.REGISTER, {
-        email,
-        password,
-        nombre,
-        rut,
-      });
-
-      const { access_token, refresh_token, user } = response.data;
+      const response = await bffApi.register({ email, password, nombre, rut });
 
       return {
-        user,
+        user: response.user,
         tokens: {
-          access_token,
-          refresh_token,
+          access_token: response.access_token,
+          refresh_token: response.refresh_token,
         },
       };
     } catch (error) {
-      if (error.response?.status === 409) {
-        throw new Error('El correo ya está registrado');
-      }
-      throw new Error(error.response?.data?.message || 'Error al registrarse');
+      throw new Error(error.message || 'Error al registrarse');
     }
   },
 
@@ -78,7 +56,7 @@ const authService = {
    */
   logout: async () => {
     try {
-      await api.post(AUTH_ENDPOINTS.LOGOUT);
+      await bffApi.logout();
       return { success: true };
     } catch (error) {
       // Aunque falle la llamada al servidor, limpiamos la sesión local
@@ -92,21 +70,16 @@ const authService = {
    */
   refreshToken: async (refreshToken) => {
     try {
-      const response = await api.post(AUTH_ENDPOINTS.REFRESH, {
-        refresh_token: refreshToken,
-      });
-
-      const { access_token, refresh_token: newRefreshToken } = response.data;
+      const response = await bffApi.refresh(refreshToken);
 
       return {
-        access_token,
-        refresh_token: newRefreshToken || refreshToken,
+        access_token: response.access_token,
+        refresh_token: response.refresh_token || refreshToken,
       };
     } catch (error) {
-      if (error.response?.status === 401) {
+      if (error.message?.includes('401') || error.message?.includes('expiró')) {
         throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
       }
-
       throw new Error('No se pudo renovar la sesión');
     }
   },
@@ -116,8 +89,7 @@ const authService = {
    */
   getCurrentUser: async () => {
     try {
-      const response = await api.get(AUTH_ENDPOINTS.ME);
-      return response.data;
+      return await bffApi.getCurrentUser();
     } catch (error) {
       throw new Error('Error al obtener datos del usuario');
     }
@@ -128,10 +100,9 @@ const authService = {
    */
   updateProfile: async (userData) => {
     try {
-      const response = await api.patch(AUTH_ENDPOINTS.ME, userData);
-      return response.data;
+      return await bffApi.updateProfile(userData);
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al actualizar perfil');
+      throw new Error(error.message || 'Error al actualizar perfil');
     }
   },
 };

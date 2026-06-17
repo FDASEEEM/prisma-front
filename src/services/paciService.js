@@ -1,12 +1,12 @@
 /**
  * PACI Service
- * Servicio para comunicación con el microservicio de perfiles PACI
+ * Servicio para comunicación con el BFF para perfiles PACI
  */
 
 import axios from 'axios';
 import storageUtils from '../utils/localStorage';
 
-const PACI_BASE_URL = import.meta.env.VITE_API_PERFIL_ALUMNO_URL || 'http://localhost:3005';
+const PACI_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';
 
 const paciApi = axios.create({
   baseURL: PACI_BASE_URL,
@@ -33,7 +33,7 @@ export const getAllPACIs = async (filters = {}) => {
   if (filters.fromDate) params.append('fromDate', filters.fromDate);
   if (filters.toDate) params.append('toDate', filters.toDate);
 
-  const response = await paciApi.get(`/paci-profiles/filter?${params.toString()}`);
+  const response = await paciApi.get(`/api/students/paci-profiles/all?${params.toString()}`);
   return response.data;
 };
 
@@ -41,7 +41,7 @@ export const getAllPACIs = async (filters = {}) => {
  * Obtener solo perfiles PACI activos
  */
 export const getActivePACIs = async () => {
-  const response = await paciApi.get('/paci-profiles/active');
+  const response = await paciApi.get('/api/students/paci-profiles/all?isActive=true');
   return response.data;
 };
 
@@ -49,7 +49,7 @@ export const getActivePACIs = async () => {
  * Obtener solo perfiles PACI históricos
  */
 export const getHistoricalPACIs = async () => {
-  const response = await paciApi.get('/paci-profiles/historical');
+  const response = await paciApi.get('/api/students/paci-profiles/all?isActive=false');
   return response.data;
 };
 
@@ -57,7 +57,7 @@ export const getHistoricalPACIs = async () => {
  * Obtener perfiles PACI recientes
  */
 export const getRecentPACIs = async (limit = 10) => {
-  const response = await paciApi.get(`/paci-profiles/recent?limit=${limit}`);
+  const response = await paciApi.get(`/api/students/paci-profiles/all?limit=${limit}`);
   return response.data;
 };
 
@@ -65,7 +65,7 @@ export const getRecentPACIs = async (limit = 10) => {
  * Crear un nuevo perfil PACI (crea también el estudiante)
  */
 export const createPACI = async (data) => {
-  const response = await paciApi.post('/paci-profiles', data);
+  const response = await paciApi.post('/api/students/paci-profiles/create', data);
   return response.data;
 };
 
@@ -73,7 +73,7 @@ export const createPACI = async (data) => {
  * Crear un nuevo estudiante
  */
 export const createStudent = async (data) => {
-  const response = await paciApi.post('/students', data);
+  const response = await paciApi.post('/api/students', data);
   return response.data;
 };
 
@@ -81,7 +81,7 @@ export const createStudent = async (data) => {
  * Actualizar un perfil PACI
  */
 export const updatePACI = async (id, data) => {
-  const response = await paciApi.patch(`/paci-profiles/${id}`, data);
+  const response = await paciApi.patch(`/api/students/paci-profiles/${id}`, data);
   return response.data;
 };
 
@@ -89,7 +89,7 @@ export const updatePACI = async (id, data) => {
  * Obtener un perfil PACI por ID
  */
 export const getPACIById = async (id) => {
-  const response = await paciApi.get(`/paci-profiles/${id}`);
+  const response = await paciApi.get(`/api/students/paci-profiles/${id}`);
   return response.data;
 };
 
@@ -97,7 +97,7 @@ export const getPACIById = async (id) => {
  * Obtener perfiles PACI por ID de estudiante
  */
 export const getPACIsByStudentId = async (studentId) => {
-  const response = await paciApi.get(`/paci-profiles/student/${studentId}`);
+  const response = await paciApi.get(`/api/students/${studentId}/paci-profiles`);
   return response.data;
 };
 
@@ -105,7 +105,7 @@ export const getPACIsByStudentId = async (studentId) => {
  * Eliminar un perfil PACI
  */
 export const deletePACI = async (id) => {
-  const response = await paciApi.delete(`/paci-profiles/${id}`);
+  const response = await paciApi.delete(`/api/students/paci-profiles/${id}`);
   return response.data;
 };
 

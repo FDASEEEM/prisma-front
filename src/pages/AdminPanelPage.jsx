@@ -201,7 +201,7 @@ const AdminPanelPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [ticketPage, professorPage, auditPage]);
+  }, [ticketPage, professorPage, auditPage, activeTab]);
 
   const kpis = useMemo(() => summary?.kpis || {}, [summary]);
 

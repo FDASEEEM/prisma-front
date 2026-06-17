@@ -7,7 +7,7 @@ const ForbiddenPage = () => {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-error">403 Forbidden</p>
         <h1 className="mt-4 text-3xl font-bold text-on-surface">No tienes permisos para entrar aquí</h1>
         <p className="mt-3 text-on-surface-variant">
-          Esta sección está reservada exclusivamente para usuarios con rol ADMIN.
+          Esta sección está reservada exclusivamente para usuarios con rol ADMIN o SUPERADMIN.
         </p>
         <Link
           to="/dashboard"

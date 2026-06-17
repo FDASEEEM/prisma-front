@@ -1,6 +1,7 @@
 /**
  * API Service - Axios Instance
  * Configuración centralizada para todas las llamadas HTTP
+ * Ahora apunta al BFF (prisma-bff) en :3006
  */
 
 import axios from 'axios';
@@ -8,7 +9,7 @@ import storageUtils from '../utils/localStorage';
 import { handleAuthFailure } from './authSession';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3010',
   headers: {
     'Content-Type': 'application/json',
   },

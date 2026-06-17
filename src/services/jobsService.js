@@ -3,7 +3,7 @@ import storageUtils from '../utils/localStorage';
 import { JOBS_ENDPOINTS } from '../constants/api';
 
 const docsApi = axios.create({
-  baseURL: import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3010',
 });
 
 docsApi.interceptors.request.use((config) => {

@@ -13,7 +13,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+  const isSuperAdmin = user?.role === 'SUPERADMIN';
 
   // Recuperar sesión al montar el componente
   useEffect(() => {
@@ -85,6 +86,7 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated,
       isLoading,
       isAdmin,
+      isSuperAdmin,
       login,
       logout,
       updateUser,

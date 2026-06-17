@@ -1,19 +1,19 @@
 /**
  * API Endpoints & URLs
  * Configuración centralizada para todos los endpoints de la aplicación
+ * Todas las llamadas pasan por el BFF (prisma-bff) en :3006
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const BFF_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';
 const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000';
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:3004';
 const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? '';
 
 export const AUTH_ENDPOINTS = {
-  REGISTER: `${API_BASE_URL}/api/auth/register`,
-  LOGIN: `${API_BASE_URL}/api/auth/login`,
-  LOGOUT: `${API_BASE_URL}/api/auth/logout`,
-  REFRESH: `${API_BASE_URL}/api/auth/refresh`,
-  ME: `${API_BASE_URL}/api/auth/me`,
+  REGISTER: `${BFF_BASE_URL}/api/auth/register`,
+  LOGIN: `${BFF_BASE_URL}/api/auth/login`,
+  LOGOUT: `${BFF_BASE_URL}/api/auth/logout`,
+  REFRESH: `${BFF_BASE_URL}/api/auth/refresh`,
+  ME: `${BFF_BASE_URL}/api/auth/me`,
 };
 
 export const CHAT_ENDPOINTS = {
@@ -28,37 +28,44 @@ export const CHAT_ENDPOINTS = {
 };
 
 export const JOBS_ENDPOINTS = {
-  UPLOAD: `${DOCS_API_URL}/api/jobs/upload`,
-  LIST: `${DOCS_API_URL}/api/jobs`,
-  HISTORY: `${DOCS_API_URL}/api/jobs/history`,
-  STATUS: (id) => `${DOCS_API_URL}/api/jobs/${id}`,
-  DOWNLOAD: (id) => `${DOCS_API_URL}/api/jobs/${id}/download`,
+  UPLOAD: `${BFF_BASE_URL}/api/jobs/upload`,
+  LIST: `${BFF_BASE_URL}/api/jobs`,
+  HISTORY: `${BFF_BASE_URL}/api/jobs/history`,
+  STATUS: (id) => `${BFF_BASE_URL}/api/jobs/${id}`,
+  DOWNLOAD: (id) => `${BFF_BASE_URL}/api/jobs/${id}/download`,
 };
 
 export const ADMIN_ENDPOINTS = {
-  SUMMARY: `${ADMIN_API_URL}/api/admin/dashboard/summary`,
-  ME: `${ADMIN_API_URL}/api/admin/me`,
-  TICKETS: `${ADMIN_API_URL}/api/admin/tickets`,
-  TICKET: (id) => `${ADMIN_API_URL}/api/admin/tickets/${id}`,
-  TICKETS_BY_REQUESTER: (requesterId) => `${ADMIN_API_URL}/api/admin/tickets/by-requester/${requesterId}`,
-  RESOURCES: `${ADMIN_API_URL}/api/admin/resources`,
-  RESOURCE: (id) => `${ADMIN_API_URL}/api/admin/resources/${id}`,
-  ANNOUNCEMENTS: `${ADMIN_API_URL}/api/admin/announcements`,
-  ANNOUNCEMENT: (id) => `${ADMIN_API_URL}/api/admin/announcements/${id}`,
-  ANNOUNCEMENTS_ACTIVE: `${ADMIN_API_URL}/api/admin/announcements/active`,
-  AUDIT_LOGS: `${ADMIN_API_URL}/api/admin/audit-logs`,
-  PROFESSORS: `${ADMIN_API_URL}/api/admin/professors`,
-  PROFESSOR: (id) => `${ADMIN_API_URL}/api/admin/professors/${id}`,
-  SESSIONS_ACTIVE: `${ADMIN_API_URL}/api/admin/sessions/active`,
-  SESSIONS_HISTORICAL: `${ADMIN_API_URL}/api/admin/sessions/historical`,
-  SESSIONS_BLOCKED: `${ADMIN_API_URL}/api/admin/sessions/blocked`,
-  SESSIONS_BY_USER: (userId) => `${ADMIN_API_URL}/api/admin/sessions/user/${userId}`,
-  SESSION: (id) => `${ADMIN_API_URL}/api/admin/sessions`,
-  SESSION_BLOCK: (id) => `${ADMIN_API_URL}/api/admin/sessions/${id}/block`,
-  SESSION_UNBLOCK: (id) => `${ADMIN_API_URL}/api/admin/sessions/${id}/unblock`,
-  SESSION_TERMINATE: (id) => `${ADMIN_API_URL}/api/admin/sessions/${id}/terminate`,
-  NOTIFICATIONS: `${ADMIN_API_URL}/api/notifications`,
-  NOTIFICATION_READ: (id) => `${ADMIN_API_URL}/api/notifications/${id}/read`,
+  SUMMARY: `${BFF_BASE_URL}/api/admin/dashboard/summary`,
+  ME: `${BFF_BASE_URL}/api/admin/me`,
+  TICKETS: `${BFF_BASE_URL}/api/admin/tickets`,
+  TICKET: (id) => `${BFF_BASE_URL}/api/admin/tickets/${id}`,
+  TICKETS_BY_REQUESTER: (requesterId) => `${BFF_BASE_URL}/api/admin/tickets/by-requester/${requesterId}`,
+  RESOURCES: `${BFF_BASE_URL}/api/admin/resources`,
+  RESOURCE: (id) => `${BFF_BASE_URL}/api/admin/resources/${id}`,
+  ANNOUNCEMENTS: `${BFF_BASE_URL}/api/admin/announcements`,
+  ANNOUNCEMENT: (id) => `${BFF_BASE_URL}/api/admin/announcements/${id}`,
+  ANNOUNCEMENTS_ACTIVE: `${BFF_BASE_URL}/api/admin/announcements/active`,
+  AUDIT_LOGS: `${BFF_BASE_URL}/api/admin/audit-logs`,
+  PROFESSORS: `${BFF_BASE_URL}/api/professors`,
+  PROFESSOR: (id) => `${BFF_BASE_URL}/api/professors/${id}`,
+  SESSIONS_ACTIVE: `${BFF_BASE_URL}/api/admin/sessions/active`,
+  SESSIONS_HISTORICAL: `${BFF_BASE_URL}/api/admin/sessions/historical`,
+  SESSIONS_BLOCKED: `${BFF_BASE_URL}/api/admin/sessions/blocked`,
+  SESSIONS_BY_USER: (userId) => `${BFF_BASE_URL}/api/admin/sessions/user/${userId}`,
+  SESSION: (id) => `${BFF_BASE_URL}/api/admin/sessions`,
+  SESSION_BLOCK: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}/block`,
+  SESSION_UNBLOCK: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}/unblock`,
+  SESSION_TERMINATE: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}/terminate`,
+  NOTIFICATIONS: `${BFF_BASE_URL}/api/notifications`,
+  NOTIFICATION_READ: (id) => `${BFF_BASE_URL}/api/notifications/${id}/read`,
+};
+
+export const SUPERADMIN_ENDPOINTS = {
+  COLEGIOS: `${BFF_BASE_URL}/api/colegios`,
+  COLEGIO: (id) => `${BFF_BASE_URL}/api/colegios/${id}`,
+  COLEGIO_STATS: (id) => `${BFF_BASE_URL}/api/colegios/${id}/stats`,
+  COLEGIO_PROFESSORS: (id) => `${BFF_BASE_URL}/api/colegios/${id}/professors`,
 };
 
 export const API_URLS = {
@@ -66,4 +73,5 @@ export const API_URLS = {
   CHAT: CHAT_ENDPOINTS,
   JOBS: JOBS_ENDPOINTS,
   ADMIN: ADMIN_ENDPOINTS,
+  SUPERADMIN: SUPERADMIN_ENDPOINTS,
 };

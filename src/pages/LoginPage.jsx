@@ -54,7 +54,14 @@ const LoginPage = () => {
     try {
       const response = await authService.login(email, password);
       login(response.user, response.tokens);
-      navigate(response.user?.role === 'ADMIN' ? '/admin' : '/dashboard');
+      const role = response.user?.role;
+      if (role === 'SUPERADMIN') {
+        navigate('/colegios');
+      } else if (role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       setApiError(error.message || 'Error al iniciar sesión. Intenta nuevamente.');
     } finally {
