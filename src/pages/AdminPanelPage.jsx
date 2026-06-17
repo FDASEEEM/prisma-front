@@ -188,6 +188,12 @@ const AdminPanelPage = () => {
       setHistoricalSessions(extractData(results[7]));
       setBlockedSessions(extractData(results[8]));
 
+      // Debug
+      if (typeof window !== 'undefined') {
+        console.log('AdminPanel Summary:', results[0].status === 'fulfilled' ? results[0].value : 'FAILED');
+        console.log('AdminPanel kpis:', results[0].status === 'fulfilled' ? results[0].value?.kpis : null);
+      }
+
       const failures = results.filter(r => r.status === 'rejected');
       if (failures.length > 0) {
         console.warn(`${failures.length} endpoint(s) failed to load`);

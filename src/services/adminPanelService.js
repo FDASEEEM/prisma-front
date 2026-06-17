@@ -8,6 +8,8 @@ const createAdminApi = () => {
     baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3010',
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
     },
   });
 
