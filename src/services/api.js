@@ -1,7 +1,7 @@
 /**
  * API Service - Axios Instance
  * Configuración centralizada para todas las llamadas HTTP
- * Ahora apunta al BFF (prisma-bff) en :3006
+ * Ahora apunta al BFF (prisma-bff) en :3010
  */
 
 import axios from 'axios';

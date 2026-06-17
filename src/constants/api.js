@@ -1,7 +1,7 @@
 /**
  * API Endpoints & URLs
  * Configuración centralizada para todos los endpoints de la aplicación
- * Todas las llamadas pasan por el BFF (prisma-bff) en :3006
+ * Todas las llamadas pasan por el BFF (prisma-bff) en :3010
  */
 
 const BFF_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';

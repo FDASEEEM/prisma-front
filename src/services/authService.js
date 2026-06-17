@@ -4,10 +4,6 @@
  */
 
 import bffApi from './bffApi';
-import {
-  getAuthErrorMessage,
-  isInvalidCredentialsError,
-} from './authErrors';
 
 const authService = {
   /**
@@ -25,10 +21,12 @@ const authService = {
         },
       };
     } catch (error) {
-      if (error.message?.includes('401') || error.message?.includes('incorrectos')) {
+      if (error.response?.status === 401) {
         throw new Error('Correo o contraseña incorrectos');
       }
-      throw new Error(error.message || 'Error al iniciar sesión');
+      const message =
+        error.response?.data?.message || error.message || 'Error al iniciar sesión';
+      throw new Error(message);
     }
   },
 
@@ -47,7 +45,9 @@ const authService = {
         },
       };
     } catch (error) {
-      throw new Error(error.message || 'Error al registrarse');
+      const message =
+        error.response?.data?.message || error.message || 'Error al registrarse';
+      throw new Error(message);
     }
   },
 
@@ -77,7 +77,7 @@ const authService = {
         refresh_token: response.refresh_token || refreshToken,
       };
     } catch (error) {
-      if (error.message?.includes('401') || error.message?.includes('expiró')) {
+      if (error.response?.status === 401) {
         throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
       }
       throw new Error('No se pudo renovar la sesión');
@@ -102,7 +102,9 @@ const authService = {
     try {
       return await bffApi.updateProfile(userData);
     } catch (error) {
-      throw new Error(error.message || 'Error al actualizar perfil');
+      const message =
+        error.response?.data?.message || error.message || 'Error al actualizar perfil';
+      throw new Error(message);
     }
   },
 };
