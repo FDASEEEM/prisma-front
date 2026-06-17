@@ -10,6 +10,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3002,
       open: true,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
       proxy: {
         '/chat': {
           target: chatTarget,

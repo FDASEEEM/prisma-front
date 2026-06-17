@@ -188,6 +188,17 @@ const AdminPanelPage = () => {
       setHistoricalSessions(extractData(results[7]));
       setBlockedSessions(extractData(results[8]));
 
+      // Debug - remove after fixing
+      if (typeof window !== 'undefined') {
+        window.__adminPanelDebug = {
+          summary: results[0].status === 'fulfilled' ? results[0].value : 'FAILED',
+          summaryError: results[0].status === 'rejected' ? results[0].reason?.message : null,
+          ticketsCount: Array.isArray(results[1].status === 'fulfilled' ? results[1].value : []) ? results[1].value.length : 0,
+          ticketsError: results[1].status === 'rejected' ? results[1].reason?.message : null,
+        };
+        console.log('[AdminPanel] Data loaded:', window.__adminPanelDebug);
+      }
+
       const failures = results.filter(r => r.status === 'rejected');
       if (failures.length > 0) {
         console.warn(`${failures.length} endpoint(s) failed to load`);
