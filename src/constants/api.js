@@ -61,9 +61,17 @@ export const ADMIN_ENDPOINTS = {
   NOTIFICATION_READ: (id) => `${ADMIN_API_URL}/api/notifications/${id}/read`,
 };
 
+export const SUPERADMIN_ENDPOINTS = {
+  COLEGIOS: `${API_BASE_URL}/api/superadmin/colegios`,
+  COLEGIO: (id) => `${API_BASE_URL}/api/superadmin/colegios/${id}`,
+  COLEGIO_STATS: (id) => `${API_BASE_URL}/api/superadmin/colegios/${id}/stats`,
+  COLEGIO_PROFESSORS: (id) => `${API_BASE_URL}/api/superadmin/colegios/${id}/professors`,
+};
+
 export const API_URLS = {
   AUTH: AUTH_ENDPOINTS,
   CHAT: CHAT_ENDPOINTS,
   JOBS: JOBS_ENDPOINTS,
   ADMIN: ADMIN_ENDPOINTS,
+  SUPERADMIN: SUPERADMIN_ENDPOINTS,
 };

@@ -9,7 +9,7 @@ import { Button } from '../ui';
 
 const SideNav = () => {
   const location = useLocation();
-  const { logout, isAdmin } = useAuth();
+  const { logout, isAdmin, isSuperAdmin } = useAuth();
 
   const navItems = [
     { path: '/nueva-sesion', label: 'Nueva Sesión', icon: 'add_circle' },
@@ -17,6 +17,7 @@ const SideNav = () => {
     { path: '/historial',    label: 'Historial',    icon: 'history' },
     { path: '/paci',         label: 'Alumnos',      icon: 'group' },
     { path: '/soporte',      label: 'Soporte',      icon: 'support_agent' },
+    { path: '/colegios',     label: 'Colegios',     icon: 'school', superAdminOnly: true },
     { path: '/admin',        label: 'Admin Panel',  icon: 'admin_panel_settings', adminOnly: true },
   ];
 
@@ -44,7 +45,11 @@ const SideNav = () => {
         {/* Navigation Links */}
         <div className="flex-grow space-y-2 overflow-y-auto pr-2">
           {navItems
-            .filter((item) => !item.adminOnly || isAdmin)
+            .filter((item) => {
+              if (item.superAdminOnly) return isSuperAdmin;
+              if (item.adminOnly) return isAdmin;
+              return true;
+            })
             .map((item) => (
             <Link
               key={item.path}
