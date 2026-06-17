@@ -8,8 +8,6 @@ const createAdminApi = () => {
     baseURL: import.meta.env.VITE_BFF_URL || 'http://localhost:3010',
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
     },
   });
 
@@ -17,6 +15,12 @@ const createAdminApi = () => {
     const token = storageUtils.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Add timestamp to prevent caching
+    if (config.method === 'get' && config.params) {
+      config.params._t = Date.now();
+    } else if (config.method === 'get') {
+      config.params = { _t: Date.now() };
     }
     return config;
   });
