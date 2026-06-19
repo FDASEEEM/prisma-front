@@ -1,35 +1,43 @@
 /**
  * SessionToast.test.jsx
- * Pruebas unitarias para el componente SessionToast
- * Cobertura: 100%
+ * Pruebas unitarias del componente SessionToast.
+ *
+ * NOTA: el componente actualiza `visible` en un useEffect que se ejecuta durante
+ * el render (act de RTL), por lo que las aserciones son SÍNCRONAS. No se usa
+ * `waitFor` junto a `vi.useFakeTimers()` porque esa combinación se deadlockea
+ * (waitFor sondea con timers congelados).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import SessionToast from './SessionToast';
 
-// Mocks
 vi.mock('../../context/ActiveSessionContext', () => ({
   useActiveSession: vi.fn(),
 }));
 
 vi.mock('../../services/chatService', () => ({
-  default: {
-    downloadResult: vi.fn(),
-  },
+  default: { downloadResult: vi.fn() },
 }));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: vi.fn(() => vi.fn()),
-  };
+  return { ...actual, useNavigate: vi.fn(() => vi.fn()) };
 });
 
 import { useActiveSession } from '../../context/ActiveSessionContext';
 import chatService from '../../services/chatService';
+
+const setSession = (activeSession, stopTracking = vi.fn()) =>
+  useActiveSession.mockReturnValue({ activeSession, stopTracking });
+
+const renderToast = () =>
+  render(
+    <BrowserRouter>
+      <SessionToast />
+    </BrowserRouter>,
+  );
 
 describe('SessionToast', () => {
   beforeEach(() => {
@@ -41,312 +49,108 @@ describe('SessionToast', () => {
     vi.useRealTimers();
   });
 
-  it('no debe renderizar si no hay sesión activa', () => {
-    useActiveSession.mockReturnValue({
-      activeSession: null,
-      stopTracking: vi.fn(),
-    });
-
-    const { container } = render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    expect(container.firstChild.childNodes.length).toBe(0);
+  it('no renderiza si no hay sesión activa', () => {
+    setSession(null);
+    const { container } = renderToast();
+    expect(container.firstChild).toBeNull();
   });
 
-  it('no debe renderizar si sesión está en fase running', () => {
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'running',
-        currentStep: 'Procesando',
-      },
-      stopTracking: vi.fn(),
-    });
-
-    const { container } = render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    // No debe mostrar nada inicialmente para fase running
+  it('no renderiza si la sesión está en fase running', () => {
+    setSession({ sessionId: 's1', phase: 'running', currentStep: 'Procesando' });
+    renderToast();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('debe mostrar toast cuando sesión se completa', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'completed',
-        currentStep: '',
-        workflowStatus: 'success',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/éxito|completada|completed/i)).toBeInTheDocument();
-    });
+  it('muestra el toast de éxito cuando la sesión se completa', () => {
+    setSession({ sessionId: 's1', phase: 'completed', workflowStatus: 'success' });
+    renderToast();
+    expect(screen.getByText('Tu material se ha generado')).toBeInTheDocument();
   });
 
-  it('debe mostrar toast cuando sesión tiene error', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'error',
-        currentStep: '',
-        error: 'Error al procesar el documento',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/error|Error/i)).toBeInTheDocument();
-    });
+  it('muestra el toast de error con su mensaje', () => {
+    setSession({ sessionId: 's1', phase: 'error', error: 'Error al procesar el documento' });
+    renderToast();
+    expect(screen.getByText('Error en la generación')).toBeInTheDocument();
+    expect(screen.getByText('Error al procesar el documento')).toBeInTheDocument();
   });
 
-  it('debe cerrar automáticamente el toast de error después del tiempo especificado', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'error',
-        currentStep: '',
-        error: 'Error de procesamiento',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    // Avanzar el tiempo más allá del ERROR_TOAST_DURATION (12000ms)
-    vi.advanceTimersByTime(13000);
-
-    await waitFor(() => {
-      expect(stopTrackingMock).toHaveBeenCalled();
-    });
+  it('cierra automáticamente el toast de error tras el tiempo especificado', () => {
+    const stopTracking = vi.fn();
+    setSession({ sessionId: 's1', phase: 'error', error: 'x' }, stopTracking);
+    renderToast();
+    act(() => { vi.advanceTimersByTime(13000); });
+    expect(stopTracking).toHaveBeenCalled();
   });
 
-  it('no debe cerrar automáticamente el toast completado', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'completed',
-        currentStep: '',
-        workflowStatus: 'success',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    // Avanzar el tiempo mucho más que ERROR_TOAST_DURATION
-    vi.advanceTimersByTime(20000);
-
-    // No debe llamar stopTracking porque el toast de completado no se auto-cierra
-    expect(stopTrackingMock).not.toHaveBeenCalled();
+  it('no cierra automáticamente el toast de éxito', () => {
+    const stopTracking = vi.fn();
+    setSession({ sessionId: 's1', phase: 'completed', workflowStatus: 'success' }, stopTracking);
+    renderToast();
+    act(() => { vi.advanceTimersByTime(20000); });
+    expect(stopTracking).not.toHaveBeenCalled();
   });
 
-  it('debe restaurar sesión terminal desde localStorage', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'completed',
-        currentStep: '',
-        workflowStatus: 'success',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      // Debe mostrar algo visible
-      expect(screen.getByText(/completed|éxito/i)).toBeInTheDocument();
-    });
+  it('muestra un toast terminal restaurado (éxito) inmediatamente', () => {
+    setSession({ sessionId: 's1', phase: 'completed', workflowStatus: 'success' });
+    renderToast();
+    expect(screen.getByText('Tu material se ha generado')).toBeInTheDocument();
   });
 
-  it('debe mostrar barra de progreso para toast de error', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'error',
-        currentStep: '',
-        error: 'Error',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    const { container } = render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    // Buscar elemento que represente barra de progreso
-    const progressBar = container.querySelector('[style*="width"]');
-    expect(progressBar).toBeInTheDocument();
+  it('muestra una barra de progreso en el toast de error', () => {
+    setSession({ sessionId: 's1', phase: 'error', error: 'Error' });
+    const { container } = renderToast();
+    expect(container.querySelector('[style*="width"]')).toBeInTheDocument();
   });
 
-  it('debe tener opciones de acción (ir a sesión, descargar, etc)', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'completed',
-        currentStep: '',
-        workflowStatus: 'success',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      // Debe haber al menos un botón en el toast
-      const buttons = screen.getAllByRole('button');
-      expect(buttons.length).toBeGreaterThan(0);
-    });
+  it('ofrece acciones (ver sesión y descargar) en el toast de éxito', () => {
+    setSession({ sessionId: 's1', phase: 'completed', workflowStatus: 'success' });
+    renderToast();
+    expect(screen.getByText('Ver sesion')).toBeInTheDocument();
+    expect(screen.getByText('Descargar')).toBeInTheDocument();
   });
 
-  it('debe llamar downloadResult cuando se hace clic en descargar', async () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'completed',
-        currentStep: '',
-        workflowStatus: 'success',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
+  it('llama downloadResult al hacer clic en descargar', () => {
     chatService.downloadResult.mockResolvedValue({ success: true });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      const downloadButton = screen.queryByText(/descargar|download/i);
-      if (downloadButton) {
-        downloadButton.click();
-      }
-    });
+    setSession({ sessionId: 's1', phase: 'completed', workflowStatus: 'success' });
+    renderToast();
+    fireEvent.click(screen.getByText('Descargar'));
+    expect(chatService.downloadResult).toHaveBeenCalledWith('s1');
   });
 
-  it('debe manejar errores al descargar resultado', async () => {
-    console.error = vi.fn();
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'completed',
-        currentStep: '',
-        workflowStatus: 'success',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
+  it('maneja errores al descargar sin crashear', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     chatService.downloadResult.mockRejectedValue(new Error('Download failed'));
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      const downloadButton = screen.queryByText(/descargar|download/i);
-      if (downloadButton) {
-        downloadButton.click();
-      }
+    setSession({ sessionId: 's1', phase: 'completed', workflowStatus: 'success' });
+    renderToast();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Descargar'));
     });
+    expect(chatService.downloadResult).toHaveBeenCalledWith('s1');
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
   });
 
-  // NOTA: este archivo usa vi.useFakeTimers() + waitFor en varios tests, combinación
-  // que se deadlockea (waitFor sondea con timers congelados). Los tests nuevos asertan
-  // de forma síncrona para evitarlo.
-  it('debe mostrar un bloqueo normativo distinto del error de sistema', () => {
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'error',
-        workflowStatus: 'compliance_blocked',
-        error: 'El PACI no es procesable — informe vencido. (Decreto 170/2010)',
-      },
-      stopTracking: vi.fn(),
+  it('muestra un bloqueo normativo distinto del error de sistema', () => {
+    setSession({
+      sessionId: 's1',
+      phase: 'error',
+      workflowStatus: 'compliance_blocked',
+      error: 'El PACI no es procesable — informe vencido. (Decreto 170/2010)',
     });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
-    );
-
+    renderToast();
     expect(screen.getByText('Documento no conforme a normativa')).toBeInTheDocument();
     expect(screen.getByText(/Decreto 170\/2010/)).toBeInTheDocument();
     expect(screen.queryByText('Error en la generación')).not.toBeInTheDocument();
   });
 
   it('auto-cierra el bloqueo/error sin crashear (regresión TDZ de handleDismiss)', () => {
-    const stopTrackingMock = vi.fn();
-    useActiveSession.mockReturnValue({
-      activeSession: {
-        sessionId: 'session_123',
-        phase: 'error',
-        workflowStatus: 'compliance_blocked',
-        error: 'bloqueo',
-      },
-      stopTracking: stopTrackingMock,
-    });
-
-    render(
-      <BrowserRouter>
-        <SessionToast />
-      </BrowserRouter>
+    const stopTracking = vi.fn();
+    setSession(
+      { sessionId: 's1', phase: 'error', workflowStatus: 'compliance_blocked', error: 'bloqueo' },
+      stopTracking,
     );
-
+    renderToast();
     act(() => { vi.advanceTimersByTime(13000); });
-
-    expect(stopTrackingMock).toHaveBeenCalled();
+    expect(stopTracking).toHaveBeenCalled();
   });
 });

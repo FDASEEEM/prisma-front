@@ -1,323 +1,164 @@
 /**
  * authService.test.js
- * Pruebas unitarias para el servicio de autenticación
- * Cobertura: 100%
+ * Pruebas unitarias del servicio de autenticación (delega en bffApi).
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import authService from './authService';
-import api from './api';
-import * as authErrors from './authErrors';
+import bffApi from './bffApi';
 
-// Mock de la API
-vi.mock('./api');
-vi.mock('./authErrors');
+// bffApi es la capa HTTP hacia el BFF; la mockeamos para aislar authService.
+vi.mock('./bffApi', () => ({
+  default: {
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    refresh: vi.fn(),
+    getCurrentUser: vi.fn(),
+    updateProfile: vi.fn(),
+  },
+}));
 
 describe('authService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('login', () => {
-    it('debe autenticar un usuario correctamente con email y password válidos', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', nombre: 'Test User' };
-      const mockTokens = {
-        access_token: 'access_token_123',
-        refresh_token: 'refresh_token_456',
-      };
-
-      api.post.mockResolvedValueOnce({
-        data: {
-          user: mockUser,
-          access_token: mockTokens.access_token,
-          refresh_token: mockTokens.refresh_token,
-        },
+    it('autentica y devuelve user + tokens', async () => {
+      bffApi.login.mockResolvedValueOnce({
+        user: { id: '1', email: 'test@example.com' },
+        access_token: 'access_123',
+        refresh_token: 'refresh_456',
       });
 
       const result = await authService.login('test@example.com', 'password123');
 
       expect(result).toEqual({
-        user: mockUser,
-        tokens: mockTokens,
+        user: { id: '1', email: 'test@example.com' },
+        tokens: { access_token: 'access_123', refresh_token: 'refresh_456' },
       });
-      expect(api.post).toHaveBeenCalledWith('auth/login', {
-        email: 'test@example.com',
-        password: 'password123',
-      });
+      expect(bffApi.login).toHaveBeenCalledWith('test@example.com', 'password123');
     });
 
-    it('debe lanzar error si credenciales son inválidas', async () => {
-      authErrors.isInvalidCredentialsError.mockReturnValueOnce(true);
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 401,
-          data: { code: 'AUTH_INVALID_CREDENTIALS' },
-        },
-      });
-
-      await expect(
-        authService.login('wrong@example.com', 'wrongpass')
-      ).rejects.toThrow('Correo o contraseña incorrectos');
-    });
-
-    it('debe lanzar error de sesión expirada', async () => {
-      authErrors.isInvalidCredentialsError.mockReturnValueOnce(false);
-      authErrors.getAuthErrorMessage.mockReturnValueOnce('Tu sesión expiró. Vuelve a iniciar sesión.');
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 401,
-          data: { code: 'AUTH_SESSION_EXPIRED' },
-        },
-      });
-
-      await expect(authService.login('test@example.com', 'password')).rejects.toThrow(
-        'Tu sesión expiró. Vuelve a iniciar sesión.'
+    it('lanza "Correo o contraseña incorrectos" ante un 401', async () => {
+      bffApi.login.mockRejectedValueOnce({ response: { status: 401 } });
+      await expect(authService.login('a@a.com', 'bad')).rejects.toThrow(
+        'Correo o contraseña incorrectos',
       );
     });
 
-    it('debe manejar errores de servidor genéricos', async () => {
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 500,
-          data: { message: 'Error interno del servidor' },
-        },
+    it('usa el mensaje del servidor en otros errores', async () => {
+      bffApi.login.mockRejectedValueOnce({
+        response: { status: 500, data: { message: 'Servidor no disponible' } },
       });
-
-      await expect(authService.login('test@example.com', 'password')).rejects.toThrow(
-        'Error interno del servidor'
-      );
+      await expect(authService.login('a@a.com', 'x')).rejects.toThrow('Servidor no disponible');
     });
 
-    it('debe manejar errores sin respuesta del servidor', async () => {
-      api.post.mockRejectedValueOnce(new Error('Network error'));
-
-      await expect(authService.login('test@example.com', 'password')).rejects.toThrow(
-        'Error al iniciar sesión'
-      );
+    it('usa mensaje por defecto si no hay información del error', async () => {
+      bffApi.login.mockRejectedValueOnce({});
+      await expect(authService.login('a@a.com', 'x')).rejects.toThrow('Error al iniciar sesión');
     });
   });
 
   describe('register', () => {
-    it('debe registrar un usuario nuevo correctamente', async () => {
-      const mockUser = { id: '2', email: 'newuser@example.com', nombre: 'New User', rut: '12.345.678-9' };
-      const mockTokens = {
-        access_token: 'access_token_789',
-        refresh_token: 'refresh_token_012',
-      };
-
-      api.post.mockResolvedValueOnce({
-        data: {
-          user: mockUser,
-          access_token: mockTokens.access_token,
-          refresh_token: mockTokens.refresh_token,
-        },
+    it('registra y devuelve user + tokens', async () => {
+      bffApi.register.mockResolvedValueOnce({
+        user: { id: '2' },
+        access_token: 'a',
+        refresh_token: 'r',
       });
 
-      const result = await authService.register('newuser@example.com', 'password123', 'New User', '12.345.678-9');
+      const result = await authService.register('e@e.com', 'pw', 'Nombre', '11.111.111-1');
 
       expect(result).toEqual({
-        user: mockUser,
-        tokens: mockTokens,
+        user: { id: '2' },
+        tokens: { access_token: 'a', refresh_token: 'r' },
       });
-      expect(api.post).toHaveBeenCalledWith('auth/register', {
-        email: 'newuser@example.com',
-        password: 'password123',
-        nombre: 'New User',
-        rut: '12.345.678-9',
+      expect(bffApi.register).toHaveBeenCalledWith({
+        email: 'e@e.com',
+        password: 'pw',
+        nombre: 'Nombre',
+        rut: '11.111.111-1',
       });
     });
 
-    it('debe lanzar error si el email ya está registrado', async () => {
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 409,
-          data: { message: 'El correo ya está registrado' },
-        },
+    it('propaga el mensaje de error del servidor', async () => {
+      bffApi.register.mockRejectedValueOnce({
+        response: { data: { message: 'El email ya está registrado' } },
       });
-
-      await expect(
-        authService.register('existing@example.com', 'password', 'User', 'rut')
-      ).rejects.toThrow('El correo ya está registrado');
-    });
-
-    it('debe manejar errores del servidor en registro', async () => {
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 500,
-          data: { message: 'Error al crear usuario' },
-        },
-      });
-
-      await expect(
-        authService.register('test@example.com', 'password', 'User', 'rut')
-      ).rejects.toThrow('Error al crear usuario');
-    });
-
-    it('debe usar mensaje por defecto si no hay respuesta del servidor', async () => {
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 400,
-        },
-      });
-
-      await expect(
-        authService.register('test@example.com', 'password', 'User', 'rut')
-      ).rejects.toThrow('Error al registrarse');
+      await expect(authService.register('e', 'p', 'n', 'r')).rejects.toThrow(
+        'El email ya está registrado',
+      );
     });
   });
 
   describe('logout', () => {
-    it('debe cerrar sesión correctamente', async () => {
-      api.post.mockResolvedValueOnce({ data: { success: true } });
-
-      const result = await authService.logout();
-
-      expect(result).toEqual({ success: true });
-      expect(api.post).toHaveBeenCalledWith('auth/logout');
+    it('cierra sesión correctamente', async () => {
+      bffApi.logout.mockResolvedValueOnce(undefined);
+      await expect(authService.logout()).resolves.toEqual({ success: true });
     });
 
-    it('debe retornar success=true incluso si el servidor falla', async () => {
-      api.post.mockRejectedValueOnce(new Error('Network error'));
-      console.warn = vi.fn();
-
-      const result = await authService.logout();
-
-      expect(result).toEqual({ success: true });
-      expect(console.warn).toHaveBeenCalled();
+    it('devuelve success=true aunque el servidor falle', async () => {
+      bffApi.logout.mockRejectedValueOnce(new Error('network'));
+      await expect(authService.logout()).resolves.toEqual({ success: true });
     });
   });
 
   describe('refreshToken', () => {
-    it('debe renovar el token de acceso correctamente', async () => {
-      const oldToken = 'refresh_token_123';
-      const newAccessToken = 'new_access_token';
-      const newRefreshToken = 'new_refresh_token';
-
-      api.post.mockResolvedValueOnce({
-        data: {
-          access_token: newAccessToken,
-          refresh_token: newRefreshToken,
-        },
-      });
-
-      const result = await authService.refreshToken(oldToken);
-
-      expect(result).toEqual({
-        access_token: newAccessToken,
-        refresh_token: newRefreshToken,
-      });
-      expect(api.post).toHaveBeenCalledWith('auth/refresh', {
-        refresh_token: oldToken,
-      });
+    it('renueva el token de acceso', async () => {
+      bffApi.refresh.mockResolvedValueOnce({ access_token: 'nuevo', refresh_token: 'nuevoR' });
+      const result = await authService.refreshToken('viejoR');
+      expect(result).toEqual({ access_token: 'nuevo', refresh_token: 'nuevoR' });
     });
 
-    it('debe mantener el refresh token antiguo si no viene uno nuevo', async () => {
-      const oldToken = 'refresh_token_123';
-      const newAccessToken = 'new_access_token';
-
-      api.post.mockResolvedValueOnce({
-        data: {
-          access_token: newAccessToken,
-          refresh_token: null,
-        },
-      });
-
-      const result = await authService.refreshToken(oldToken);
-
-      expect(result).toEqual({
-        access_token: newAccessToken,
-        refresh_token: oldToken,
-      });
+    it('mantiene el refresh token antiguo si no viene uno nuevo', async () => {
+      bffApi.refresh.mockResolvedValueOnce({ access_token: 'nuevo' });
+      const result = await authService.refreshToken('viejoR');
+      expect(result).toEqual({ access_token: 'nuevo', refresh_token: 'viejoR' });
     });
 
-    it('debe lanzar error de sesión expirada cuando status es 401', async () => {
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 401,
-          data: { message: 'Token expirado' },
-        },
-      });
-
-      await expect(authService.refreshToken('old_token')).rejects.toThrow(
-        'Tu sesión expiró. Vuelve a iniciar sesión.'
+    it('lanza sesión expirada cuando el status es 401', async () => {
+      bffApi.refresh.mockRejectedValueOnce({ response: { status: 401 } });
+      await expect(authService.refreshToken('viejoR')).rejects.toThrow(
+        'Tu sesión expiró. Vuelve a iniciar sesión.',
       );
     });
 
-    it('debe manejar errores genéricos al renovar token', async () => {
-      api.post.mockRejectedValueOnce({
-        response: {
-          status: 500,
-          data: { message: 'Error en servidor' },
-        },
-      });
-
-      await expect(authService.refreshToken('old_token')).rejects.toThrow(
-        'No se pudo renovar la sesión'
-      );
+    it('lanza error genérico en otros fallos', async () => {
+      bffApi.refresh.mockRejectedValueOnce(new Error('x'));
+      await expect(authService.refreshToken('viejoR')).rejects.toThrow('No se pudo renovar la sesión');
     });
   });
 
   describe('getCurrentUser', () => {
-    it('debe obtener datos del usuario autenticado', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', nombre: 'Test User' };
-
-      api.get.mockResolvedValueOnce({ data: mockUser });
-
-      const result = await authService.getCurrentUser();
-
-      expect(result).toEqual(mockUser);
-      expect(api.get).toHaveBeenCalledWith('auth/me');
+    it('obtiene los datos del usuario autenticado', async () => {
+      bffApi.getCurrentUser.mockResolvedValueOnce({ id: '1', email: 'test@example.com' });
+      await expect(authService.getCurrentUser()).resolves.toEqual({
+        id: '1',
+        email: 'test@example.com',
+      });
     });
 
-    it('debe manejar errores al obtener datos del usuario', async () => {
-      api.get.mockRejectedValueOnce(new Error('Network error'));
-
-      await expect(authService.getCurrentUser()).rejects.toThrow(
-        'Error al obtener datos del usuario'
-      );
+    it('lanza error si falla', async () => {
+      bffApi.getCurrentUser.mockRejectedValueOnce(new Error('x'));
+      await expect(authService.getCurrentUser()).rejects.toThrow('Error al obtener datos del usuario');
     });
   });
 
   describe('updateProfile', () => {
-    it('debe actualizar perfil del usuario correctamente', async () => {
-      const userData = { nombre: 'Updated Name', bio: 'Nueva biografía' };
-      const updatedUser = { id: '1', email: 'test@example.com', ...userData };
-
-      api.patch.mockResolvedValueOnce({ data: updatedUser });
-
-      const result = await authService.updateProfile(userData);
-
-      expect(result).toEqual(updatedUser);
-      expect(api.patch).toHaveBeenCalledWith('auth/me', userData);
+    it('actualiza el perfil del usuario', async () => {
+      bffApi.updateProfile.mockResolvedValueOnce({ id: '1', nombre: 'Nuevo' });
+      const result = await authService.updateProfile({ nombre: 'Nuevo' });
+      expect(result).toEqual({ id: '1', nombre: 'Nuevo' });
+      expect(bffApi.updateProfile).toHaveBeenCalledWith({ nombre: 'Nuevo' });
     });
 
-    it('debe manejar errores al actualizar perfil', async () => {
-      const userData = { nombre: 'Invalid' };
-      api.patch.mockRejectedValueOnce({
-        response: {
-          status: 400,
-          data: { message: 'Datos inválidos' },
-        },
+    it('propaga el mensaje de error al actualizar', async () => {
+      bffApi.updateProfile.mockRejectedValueOnce({
+        response: { data: { message: 'No permitido' } },
       });
-
-      await expect(authService.updateProfile(userData)).rejects.toThrow('Datos inválidos');
-    });
-
-    it('debe usar mensaje por defecto si no hay respuesta', async () => {
-      const userData = { nombre: 'Test' };
-      api.patch.mockRejectedValueOnce({
-        response: {
-          status: 500,
-        },
-      });
-
-      await expect(authService.updateProfile(userData)).rejects.toThrow(
-        'Error al actualizar perfil'
-      );
+      await expect(authService.updateProfile({})).rejects.toThrow('No permitido');
     });
   });
 });
