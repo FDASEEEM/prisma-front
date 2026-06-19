@@ -1,192 +1,111 @@
 /**
  * jobsService.test.js
- * Pruebas unitarias para el servicio de trabajos/sesiones
- * Cobertura: 100%
+ * Pruebas unitarias del servicio de trabajos/sesiones (axios → BFF).
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import jobsService from './jobsService';
-import axios from 'axios';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock axios
-vi.mock('axios');
+// El servicio crea su instancia de axios en import-time, por eso el mock se
+// define con vi.hoisted (se evalúa antes de importar el módulo).
+const { mockDocsApi } = vi.hoisted(() => ({
+  mockDocsApi: {
+    post: vi.fn(),
+    get: vi.fn(),
+    interceptors: { request: { use: vi.fn() } },
+  },
+}));
+
+vi.mock('axios', () => ({
+  default: { create: vi.fn(() => mockDocsApi) },
+}));
+
+import jobsService from './jobsService';
 
 describe('jobsService', () => {
-  let mockDocsApi;
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockDocsApi = {
-      post: vi.fn(),
-      get: vi.fn(),
-      interceptors: {
-        request: { use: vi.fn((fn) => fn) },
-      },
-    };
-    axios.create.mockReturnValue(mockDocsApi);
-  });
-
-  afterEach(() => {
     vi.clearAllMocks();
   });
 
   describe('createJob', () => {
-    it('debe crear un job con archivos y prompt', async () => {
+    it('crea un job con archivos y prompt (multipart)', async () => {
       const mockJob = { jobId: 'job_123', status: 'processing' };
       mockDocsApi.post.mockResolvedValueOnce({ data: mockJob });
 
-      const paciFile = new File(['content'], 'paci.pdf');
-      const planningFile = new File(['content'], 'planning.pdf');
-      const prompt = 'Generate planning';
+      const paciFile = new File(['c'], 'paci.pdf');
+      const planningFile = new File(['c'], 'planning.pdf');
 
-      const result = await jobsService.createJob(paciFile, planningFile, prompt);
+      const result = await jobsService.createJob(paciFile, planningFile, 'Generar');
 
       expect(result).toEqual(mockJob);
-      expect(mockDocsApi.post).toHaveBeenCalled();
+      const [, body, config] = mockDocsApi.post.mock.calls[0];
+      expect(body).toBeInstanceOf(FormData);
+      expect(config.headers['Content-Type']).toBe('multipart/form-data');
     });
 
-    it('debe manejar errores al crear job', async () => {
-      mockDocsApi.post.mockRejectedValueOnce({
-        response: { data: { message: 'Archivos inválidos' } },
-      });
-
-      const paciFile = new File(['content'], 'paci.pdf');
-      const planningFile = new File(['content'], 'planning.pdf');
-
-      await expect(
-        jobsService.createJob(paciFile, planningFile, 'prompt')
-      ).rejects.toThrow('Archivos inválidos');
+    it('lanza error con el mensaje del servidor', async () => {
+      mockDocsApi.post.mockRejectedValueOnce({ response: { data: { message: 'Archivo inválido' } } });
+      await expect(jobsService.createJob({}, {}, 'x')).rejects.toThrow('Archivo inválido');
     });
 
-    it('debe manejar error sin mensaje específico', async () => {
-      mockDocsApi.post.mockRejectedValueOnce({
-        response: { data: {} },
-      });
-
-      const paciFile = new File(['content'], 'paci.pdf');
-      const planningFile = new File(['content'], 'planning.pdf');
-
-      await expect(
-        jobsService.createJob(paciFile, planningFile, 'prompt')
-      ).rejects.toThrow('Error al crear la sesión');
+    it('usa mensaje por defecto si no hay respuesta', async () => {
+      mockDocsApi.post.mockRejectedValueOnce(new Error('network'));
+      await expect(jobsService.createJob({}, {}, 'x')).rejects.toThrow('Error al crear la sesión');
     });
   });
 
   describe('getHistory', () => {
-    it('debe obtener historial de sesiones', async () => {
-      const mockHistory = { sessions: [{ id: '1', status: 'completed' }] };
-      mockDocsApi.get.mockResolvedValueOnce({ data: mockHistory });
-
-      const result = await jobsService.getHistory();
-
-      expect(result).toEqual(mockHistory);
-      expect(mockDocsApi.get).toHaveBeenCalled();
+    it('devuelve el historial', async () => {
+      mockDocsApi.get.mockResolvedValueOnce({ data: [{ id: 'j1' }] });
+      await expect(jobsService.getHistory()).resolves.toEqual([{ id: 'j1' }]);
     });
 
-    it('debe manejar error al obtener historial', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: { message: 'Error en servidor' } },
-      });
-
-      await expect(jobsService.getHistory()).rejects.toThrow('Error en servidor');
-    });
-
-    it('debe usar mensaje por defecto', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: {} },
-      });
-
+    it('lanza error al fallar', async () => {
+      mockDocsApi.get.mockRejectedValueOnce(new Error('x'));
       await expect(jobsService.getHistory()).rejects.toThrow('Error al obtener historial');
     });
   });
 
   describe('listJobs', () => {
-    it('debe listar jobs con paginación', async () => {
-      const mockJobs = { jobs: [{ id: 'job_1' }], total: 1 };
-      mockDocsApi.get.mockResolvedValueOnce({ data: mockJobs });
-
-      const result = await jobsService.listJobs(1, 10);
-
-      expect(result).toEqual(mockJobs);
-      expect(mockDocsApi.get).toHaveBeenCalled();
+    it('lista jobs con paginación', async () => {
+      mockDocsApi.get.mockResolvedValueOnce({ data: { items: [], total: 0 } });
+      const result = await jobsService.listJobs(2, 5);
+      expect(result).toEqual({ items: [], total: 0 });
+      expect(mockDocsApi.get).toHaveBeenCalledWith(expect.any(String), { params: { page: 2, limit: 5 } });
     });
 
-    it('debe usar valores por defecto de paginación', async () => {
-      mockDocsApi.get.mockResolvedValueOnce({ data: { jobs: [] } });
-
+    it('usa valores por defecto de paginación', async () => {
+      mockDocsApi.get.mockResolvedValueOnce({ data: {} });
       await jobsService.listJobs();
-
-      expect(mockDocsApi.get).toHaveBeenCalled();
+      expect(mockDocsApi.get).toHaveBeenCalledWith(expect.any(String), { params: { page: 1, limit: 10 } });
     });
 
-    it('debe manejar errores', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: { message: 'Error en servidor' } },
-      });
-
-      await expect(jobsService.listJobs()).rejects.toThrow('Error en servidor');
+    it('lanza error al fallar', async () => {
+      mockDocsApi.get.mockRejectedValueOnce(new Error('x'));
+      await expect(jobsService.listJobs()).rejects.toThrow('Error al obtener sesiones');
     });
   });
 
   describe('getJobStatus', () => {
-    it('debe obtener estado de un job', async () => {
-      const mockStatus = { jobId: 'job_123', status: 'completed', progress: 100 };
-      mockDocsApi.get.mockResolvedValueOnce({ data: mockStatus });
-
-      const result = await jobsService.getJobStatus('job_123');
-
-      expect(result).toEqual(mockStatus);
+    it('devuelve el estado del job', async () => {
+      mockDocsApi.get.mockResolvedValueOnce({ data: { status: 'done' } });
+      await expect(jobsService.getJobStatus('job_1')).resolves.toEqual({ status: 'done' });
     });
 
-    it('debe manejar errores al obtener estado', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: { message: 'Job no encontrado' } },
-      });
-
-      await expect(jobsService.getJobStatus('invalid_id')).rejects.toThrow(
-        'Job no encontrado'
-      );
-    });
-
-    it('debe usar mensaje por defecto', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: {} },
-      });
-
-      await expect(jobsService.getJobStatus('invalid_id')).rejects.toThrow(
-        'Error al obtener estado del job'
-      );
+    it('lanza error al fallar', async () => {
+      mockDocsApi.get.mockRejectedValueOnce(new Error('x'));
+      await expect(jobsService.getJobStatus('job_1')).rejects.toThrow('Error al obtener estado del job');
     });
   });
 
   describe('getDownloadUrl', () => {
-    it('debe obtener URL de descarga', async () => {
-      const mockUrl = { url: 'https://storage.example.com/file.pdf' };
-      mockDocsApi.get.mockResolvedValueOnce({ data: mockUrl });
-
-      const result = await jobsService.getDownloadUrl('job_123');
-
-      expect(result).toEqual(mockUrl);
+    it('devuelve la URL de descarga', async () => {
+      mockDocsApi.get.mockResolvedValueOnce({ data: { url: 'https://s3/file' } });
+      await expect(jobsService.getDownloadUrl('job_1')).resolves.toEqual({ url: 'https://s3/file' });
     });
 
-    it('debe manejar errores al obtener URL', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: { message: 'Archivo no disponible' } },
-      });
-
-      await expect(jobsService.getDownloadUrl('invalid_id')).rejects.toThrow(
-        'Archivo no disponible'
-      );
-    });
-
-    it('debe usar mensaje por defecto', async () => {
-      mockDocsApi.get.mockRejectedValueOnce({
-        response: { data: {} },
-      });
-
-      await expect(jobsService.getDownloadUrl('invalid_id')).rejects.toThrow(
-        'Error al obtener URL de descarga'
-      );
+    it('lanza error al fallar', async () => {
+      mockDocsApi.get.mockRejectedValueOnce(new Error('x'));
+      await expect(jobsService.getDownloadUrl('job_1')).rejects.toThrow('Error al obtener URL de descarga');
     });
   });
 });

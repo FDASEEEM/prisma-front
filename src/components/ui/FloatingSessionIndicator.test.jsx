@@ -29,10 +29,13 @@ vi.mock('react-router-dom', async () => {
 });
 
 import { useActiveSession } from '../../context/ActiveSessionContext';
+import { useLocation } from 'react-router-dom';
 
 describe('FloatingSessionIndicator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Restablece la ruta por defecto (mockReturnValue persiste entre tests).
+    useLocation.mockReturnValue({ pathname: '/dashboard' });
   });
 
   it('no debe renderizar si no hay sesión activa', () => {
@@ -135,9 +138,7 @@ describe('FloatingSessionIndicator', () => {
     useActiveSession.mockReturnValue({ activeSession: mockSession });
 
     // Simular que estamos en la página de la sesión
-    vi.mocked(require('react-router-dom').useLocation).mockReturnValue({
-      pathname: '/sesion/session_123',
-    });
+    useLocation.mockReturnValue({ pathname: '/sesion/session_123' });
 
     const { container } = render(
       <BrowserRouter>
