@@ -170,6 +170,7 @@ const ColegiosPage = () => {
                     <th className="text-left px-6 py-3 text-sm font-semibold text-on-surface-variant">RUT</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-on-surface-variant">Plan</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-on-surface-variant">Usuarios</th>
+                    <th className="text-left px-6 py-3 text-sm font-semibold text-on-surface-variant">Admins</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-on-surface-variant">Estado</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-on-surface-variant">Fecha Término</th>
                     <th className="text-right px-6 py-3 text-sm font-semibold text-on-surface-variant">Acciones</th>
@@ -192,6 +193,17 @@ const ColegiosPage = () => {
                       </td>
                       <td className="px-6 py-4 text-on-surface">
                         {colegio._count?.users || 0}
+                      </td>
+                      <td className="px-6 py-4 text-on-surface">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-container/30 text-primary text-xs font-medium rounded-full">
+                          {colegio._count?.admins ?? 0}
+                          {colegio._count?.activeAdmins !== undefined &&
+                            colegio._count.activeAdmins < colegio._count.admins && (
+                              <span className="text-on-surface-variant">
+                                ({colegio._count.activeAdmins} activos)
+                              </span>
+                            )}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <Badge variant={colegio.activo ? 'success' : 'error'}>
