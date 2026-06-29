@@ -1,6 +1,6 @@
 name: Build & Push to ECR
 
-# Construye la imagen nginx del front y la sube a Amazon ECR en push a develop.
+# Construye la imagen nginx del front y la sube a Amazon ECR en push a main.
 #
 # GitHub Secrets requeridos (Settings -> Secrets and variables -> Actions):
 #   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION
@@ -13,7 +13,7 @@ name: Build & Push to ECR
 
 on:
   push:
-    branches: [develop]
+    branches: [main]
   workflow_dispatch:
 
 env:
