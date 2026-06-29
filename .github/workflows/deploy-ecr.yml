@@ -65,4 +65,5 @@ jobs:
             --force-new-deployment \
             --no-cli-pager \
             --query 'service.{name:serviceName,desired:desiredCount,running:runningCount}' \
-            --output table
+            --output table \
+            || echo "ECS redeploy skipped/failed; image was built and pushed successfully. Check ECS_CLUSTER/ECS_SERVICE variables."
