@@ -66,7 +66,10 @@ export const ActiveSessionProvider = ({ children }) => {
             next = { ...prev, currentStep: '' };
             break;
           case 'hitl_required':
-            next = { ...prev, phase: 'awaiting_hitl', currentStep: '' };
+            // Guardamos hitl_data en el contexto: la SesionPage lo espeja para
+            // abrir el modal aunque el evento haya llegado por ESTA conexión SSE
+            // (cola compartida en backend → el evento va a una sola conexión).
+            next = { ...prev, phase: 'awaiting_hitl', hitlData: data.hitl_data, currentStep: '' };
             break;
           case 'completed':
             source.close(); eventSourceRef.current = null;

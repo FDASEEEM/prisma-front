@@ -72,8 +72,14 @@ const SesionPage = () => {
     if (ctxPhase === 'completed' || ctxPhase === 'error') {
       setPhase(ctxPhase);
       if (activeSession?.workflowStatus) setWorkflowStatus(activeSession.workflowStatus);
+    } else if (ctxPhase === 'awaiting_hitl') {
+      // El HITL pudo llegar por la conexión SSE del contexto (no la de esta página,
+      // por la cola compartida en backend). Espejamos fase + hitl_data para que el
+      // modal aparezca en vivo sin tener que re-montar la página.
+      setPhase('awaiting_hitl');
+      if (activeSession?.hitlData) setHitlData(activeSession.hitlData);
     }
-  }, [activeSession?.phase, activeSession?.workflowStatus, sessionId]);
+  }, [activeSession?.phase, activeSession?.workflowStatus, activeSession?.hitlData, sessionId]);
 
   // Cuando la sesión termina mientras el usuario está en esta página,
   // limpiar el tracking global para que el indicador flotante no aparezca
