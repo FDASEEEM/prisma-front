@@ -26,13 +26,10 @@ RUN npm install --no-audit --no-fund
 
 COPY . .
 
-# Forzamos las URLs a vacío en el build de producción → same-origin.
+# Forzamos las URLs de los micros a vacío en el build de producción → same-origin.
 # Vite lee .env.production en `vite build`; con valor vacío, el front emite
-# rutas relativas (/api/..., /chat/..., /health, /feedback/...) que nginx proxea.
-# IMPORTANTE: el código usa VITE_BFF_URL (toda la API pasa por el BFF) y
-# VITE_CHAT_API_URL (workflow). Deben quedar vacías para que axios use baseURL
-# relativo same-origin (ver resolución con `??` en los services/constants).
-RUN printf 'VITE_BFF_URL=\nVITE_CHAT_API_URL=\nVITE_DOCS_API_URL=\n' > .env.production
+# rutas relativas (/api/auth/login, /paci-profiles/..., /chat/...) que nginx proxea.
+RUN printf 'VITE_API_BASE_URL=\nVITE_DOCS_API_URL=\nVITE_ADMIN_API_URL=\nVITE_API_PERFIL_ALUMNO_URL=\nVITE_CHAT_API_URL=\n' > .env.production
 
 RUN npm run build
 
@@ -43,13 +40,14 @@ FROM nginx:1.27-alpine AS runtime
 # arrancar y lo deja en /etc/nginx/conf.d/.
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
-# Direcciones internas. En una misma ECS task los contenedores comparten
-# namespace de red, por eso los defaults apuntan a 127.0.0.1. nginx solo
-# necesita 2 upstreams: el BFF (toda la API) y el workflow (chat/health/feedback).
-# El reparto a users/docs/admin/perfil lo hace el BFF por su cuenta.
+# Direcciones internas de los micros. En una misma ECS task los contenedores
+# comparten namespace de red, por eso los defaults apuntan a 127.0.0.1.
 # Si luego se separan en services distintos, sobreescribir con Service Connect / Cloud Map.
 ENV NGINX_RESOLVER=169.254.169.253 \
-    BFF_UPSTREAM=127.0.0.1:3010 \
+    USERS_UPSTREAM=127.0.0.1:3001 \
+    DOCS_UPSTREAM=127.0.0.1:3000 \
+    ADMIN_UPSTREAM=127.0.0.1:3004 \
+    PERFIL_UPSTREAM=127.0.0.1:3005 \
     WORKFLOW_UPSTREAM=127.0.0.1:8000
 
 COPY --from=builder /app/dist /usr/share/nginx/html

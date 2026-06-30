@@ -1,10 +1,9 @@
 # ──────────────────────────────────────────────────────────────────────────
-# Front PRISMA — nginx como PUERTA ÚNICA: sirve la SPA y hace de reverse-proxy.
-# El navegador solo habla con el front (1 sola IP) y este reenvía:
-#   - /api/*  → BFF (prisma-bff), que internamente reparte a users/docs/admin/perfil
-#   - /chat/*, /health, /feedback/* → prisma_workflow DIRECTO (flujo agéntico + SSE)
-# En una misma ECS task los defaults usan 127.0.0.1; si se separan en services,
-# usar nombres internos de ECS Service Connect / Cloud Map vía las ENV de upstream.
+# Front PRISMA — nginx como PUERTA ÚNICA: sirve la SPA y hace de reverse-proxy
+# hacia cada microservicio. El navegador solo habla con el front (1 sola IP),
+# y el front reenvía /api/... , /paci-profiles, /chat, etc. a los micros. En
+# una misma ECS task los defaults usan 127.0.0.1; si se separan en services,
+# usar nombres internos de ECS Service Connect / Cloud Map.
 #
 # Esta plantilla la procesa envsubst en el arranque (imagen oficial nginx):
 # las ${VARIABLES} de entorno se reemplazan; las $variables_de_nginx quedan.
@@ -38,15 +37,39 @@ server {
     gzip_types text/css application/javascript application/json image/svg+xml;
     gzip_min_length 1024;
 
-    # ── BFF: TODA la API pasa por el BFF (prisma-bff) ────────────────────────
-    # auth, colegios, professors, jobs, admin, notifications, students/paci-profiles…
-    # El front llama same-origin a /api/... y el BFF reparte a cada microservicio.
-    location /api/ {
-        set $up ${BFF_UPSTREAM};
+    # ── ms-users (auth) ──────────────────────────────────────────────────────
+    location /api/auth/ {
+        set $up ${USERS_UPSTREAM};
         proxy_pass http://$up$request_uri;
     }
 
-    # ── prisma_workflow (chat HITL + health + feedback) — DIRECTO, sin BFF ────
+    # ── ms-docs (jobs PACI) ──────────────────────────────────────────────────
+    location /api/jobs {
+        set $up ${DOCS_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── adminpanel (admin + notificaciones) ──────────────────────────────────
+    location /api/admin/ {
+        set $up ${ADMIN_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+    location /api/notifications {
+        set $up ${ADMIN_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── perfil-alumno (estudiantes + perfiles PACI) ──────────────────────────
+    location /paci-profiles {
+        set $up ${PERFIL_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+    location /students {
+        set $up ${PERFIL_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── prisma_workflow (chat HITL + health + feedback) ──────────────────────
     # El stream del flujo es SSE: hay que desactivar el buffering y alargar el
     # timeout. Al definir proxy_set_header aquí, NO se heredan los de arriba,
     # así que re-declaramos las cabeceras necesarias.
