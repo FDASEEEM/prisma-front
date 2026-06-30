@@ -2,7 +2,7 @@ import axios from 'axios';
 import storageUtils from '../utils/localStorage';
 import { handleAuthFailure } from './authSession';
 
-const BFF_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';
+const BFF_BASE_URL = import.meta.env.VITE_BFF_URL ?? 'http://localhost:3010';
 
 const createBffApi = () => {
   const bffApi = axios.create({

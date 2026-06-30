@@ -4,7 +4,7 @@
  * Todas las llamadas pasan por el BFF (prisma-bff) en :3010
  */
 
-const BFF_BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3010';
+const BFF_BASE_URL = import.meta.env.VITE_BFF_URL ?? 'http://localhost:3010';
 const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000';
 const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? '';
 
