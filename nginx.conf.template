@@ -1,0 +1,106 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Front PRISMA — nginx como PUERTA ÚNICA: sirve la SPA y hace de reverse-proxy
+# hacia cada microservicio. El navegador solo habla con el front (1 sola IP),
+# y el front reenvía /api/... , /paci-profiles, /chat, etc. a los micros. En
+# una misma ECS task los defaults usan 127.0.0.1; si se separan en services,
+# usar nombres internos de ECS Service Connect / Cloud Map.
+#
+# Esta plantilla la procesa envsubst en el arranque (imagen oficial nginx):
+# las ${VARIABLES} de entorno se reemplazan; las $variables_de_nginx quedan.
+# Los upstreams se setean por ENV en la task definition o Dockerfile.
+# ──────────────────────────────────────────────────────────────────────────
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # PACI + material son multipart y pueden pesar; subimos el límite de nginx.
+    client_max_body_size 30m;
+
+    # DNS de la VPC (Cloud Map) para resolver los upstreams en runtime, así
+    # nginx no falla al arrancar si un micro todavía no está y re-resuelve si
+    # su IP cambia (tasks de Fargate tienen IP efímera).
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
+
+    # Cabeceras comunes (heredadas por las locations que NO definan las suyas).
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Authorization     $http_authorization;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # ── ms-users (auth) ──────────────────────────────────────────────────────
+    location /api/auth/ {
+        set $up ${USERS_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── ms-docs (jobs PACI) ──────────────────────────────────────────────────
+    location /api/jobs {
+        set $up ${DOCS_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── adminpanel (admin + notificaciones) ──────────────────────────────────
+    location /api/admin/ {
+        set $up ${ADMIN_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+    location /api/notifications {
+        set $up ${ADMIN_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── perfil-alumno (estudiantes + perfiles PACI) ──────────────────────────
+    location /paci-profiles {
+        set $up ${PERFIL_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+    location /students {
+        set $up ${PERFIL_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── prisma_workflow (chat HITL + health + feedback) ──────────────────────
+    # El stream del flujo es SSE: hay que desactivar el buffering y alargar el
+    # timeout. Al definir proxy_set_header aquí, NO se heredan los de arriba,
+    # así que re-declaramos las cabeceras necesarias.
+    location /chat/ {
+        set $up ${WORKFLOW_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization     $http_authorization;
+        proxy_set_header Connection        "";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+    location /health {
+        set $up ${WORKFLOW_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+    location /feedback/ {
+        set $up ${WORKFLOW_UPSTREAM};
+        proxy_pass http://$up$request_uri;
+    }
+
+    # ── SPA estática + fallback de React Router ──────────────────────────────
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
