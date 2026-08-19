@@ -60,6 +60,16 @@ const bffApi = {
     }
   },
 
+  getGoogleAuthUrl: async () => {
+    try {
+      const api = createBffApi();
+      const response = await api.post('/api/auth/google/url');
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al iniciar sesión con Google'));
+    }
+  },
+
   logout: async () => {
     try {
       const api = createBffApi();

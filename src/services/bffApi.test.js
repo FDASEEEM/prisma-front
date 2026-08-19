@@ -75,6 +75,20 @@ describe('bffApi', () => {
       await expect(bffApi.register({})).rejects.toThrow('Error al registrar usuario');
     });
 
+    it('getGoogleAuthUrl devuelve la URL de Google', async () => {
+      mockInstance.post.mockResolvedValue(ok({ url: 'https://google.com/auth', state: 's' }));
+      const result = await bffApi.getGoogleAuthUrl();
+      expect(result).toEqual({ url: 'https://google.com/auth', state: 's' });
+      expect(mockInstance.post).toHaveBeenCalledWith('/api/auth/google/url');
+    });
+
+    it('getGoogleAuthUrl mapea error por defecto', async () => {
+      mockInstance.post.mockRejectedValue({});
+      await expect(bffApi.getGoogleAuthUrl()).rejects.toThrow(
+        'Error al iniciar sesión con Google',
+      );
+    });
+
     it('logout no lanza aunque el servidor falle', async () => {
       mockInstance.post.mockRejectedValue(new Error('network'));
       await expect(bffApi.logout()).resolves.toBeUndefined();

@@ -16,6 +16,7 @@ vi.mock('./bffApi', () => ({
     refresh: vi.fn(),
     getCurrentUser: vi.fn(),
     updateProfile: vi.fn(),
+    getGoogleAuthUrl: vi.fn(),
   },
 }));
 
@@ -128,6 +129,29 @@ describe('authService', () => {
     it('lanza error genérico en otros fallos', async () => {
       bffApi.refresh.mockRejectedValueOnce(new Error('x'));
       await expect(authService.refreshToken('viejoR')).rejects.toThrow('No se pudo renovar la sesión');
+    });
+  });
+
+  describe('getGoogleAuthUrl', () => {
+    it('devuelve la URL de autorización de Google', async () => {
+      bffApi.getGoogleAuthUrl.mockResolvedValueOnce({
+        url: 'https://google.com/auth',
+        state: 'pkce-state',
+      });
+
+      const result = await authService.getGoogleAuthUrl();
+
+      expect(result).toBe('https://google.com/auth');
+      expect(bffApi.getGoogleAuthUrl).toHaveBeenCalled();
+    });
+
+    it('propaga el mensaje de error', async () => {
+      bffApi.getGoogleAuthUrl.mockRejectedValueOnce(
+        new Error('Error al iniciar sesión con Google'),
+      );
+      await expect(authService.getGoogleAuthUrl()).rejects.toThrow(
+        'Error al iniciar sesión con Google',
+      );
     });
   });
 
