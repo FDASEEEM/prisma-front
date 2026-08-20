@@ -89,6 +89,20 @@ describe('bffApi', () => {
       );
     });
 
+    it('refresh envía el refresh token y devuelve los tokens nuevos', async () => {
+      mockInstance.post.mockResolvedValue(ok({ access_token: 'nuevo', refresh_token: 'nuevoR' }));
+      const result = await bffApi.refresh('refresh_viejo');
+      expect(result).toEqual({ access_token: 'nuevo', refresh_token: 'nuevoR' });
+      expect(mockInstance.post).toHaveBeenCalledWith('/api/auth/refresh', {
+        refreshToken: 'refresh_viejo',
+      });
+    });
+
+    it('refresh mapea error por defecto', async () => {
+      mockInstance.post.mockRejectedValue({});
+      await expect(bffApi.refresh('r')).rejects.toThrow('Error al renovar sesión');
+    });
+
     it('logout no lanza aunque el servidor falle', async () => {
       mockInstance.post.mockRejectedValue(new Error('network'));
       await expect(bffApi.logout()).resolves.toBeUndefined();

@@ -4,7 +4,7 @@
  * y completa la sesión del usuario.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Spinner } from '../components';
@@ -14,8 +14,12 @@ const GoogleCallbackPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [error, setError] = useState(null);
+  const processedRef = useRef(false);
 
   useEffect(() => {
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     document.title = 'P.R.I.S.M.A. - Iniciando sesión';
 
     const params = new URLSearchParams(window.location.hash.slice(1));

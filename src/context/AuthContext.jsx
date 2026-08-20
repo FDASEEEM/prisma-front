@@ -3,9 +3,10 @@
  * Contexto para manejar estado de autenticación a nivel global
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import storageUtils from '../utils/localStorage';
 import { resetAuthRedirectLock } from '../services/authSession';
+import authService from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -13,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const refreshingRef = useRef(false);
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
   const isSuperAdmin = user?.role === 'SUPERADMIN';
 
@@ -41,14 +43,35 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    const checkToken = () => {
+    const clearSessionAndRedirect = () => {
+      storageUtils.clearSession();
+      setUser(null);
+      setIsAuthenticated(false);
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
+    };
+
+    const checkToken = async () => {
       const token = storageUtils.getToken();
-      if (token && isTokenExpired(token)) {
-        storageUtils.clearSession();
-        setUser(null);
-        setIsAuthenticated(false);
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.replace('/login');
+      const expired = token ? isTokenExpired(token) : null;
+      if (token && expired && !refreshingRef.current) {
+        refreshingRef.current = true;
+        try {
+          const refreshToken = storageUtils.getRefreshToken();
+          if (!refreshToken) {
+            clearSessionAndRedirect();
+            return;
+          }
+          const newTokens = await authService.refreshToken(refreshToken);
+          storageUtils.saveToken(newTokens.access_token);
+          if (newTokens.refresh_token) {
+            storageUtils.saveRefreshToken(newTokens.refresh_token);
+          }
+        } catch (err) {
+          clearSessionAndRedirect();
+        } finally {
+          refreshingRef.current = false;
         }
       }
     };
