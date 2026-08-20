@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = storageUtils.getUser();
     if (storedUser && storageUtils.getToken()) {
-      setUser(storedUser);
+      setUser(normalizeUser(storedUser));
       setIsAuthenticated(true);
       resetAuthRedirectLock();
     }
@@ -81,11 +81,17 @@ export const AuthProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const normalizeUser = (u) => {
+    if (!u) return u;
+    return { ...u, nombre: u.nombre || u.nombreCompleto || '' };
+  };
+
   const login = (userData, tokens) => {
-    storageUtils.saveUser(userData);
+    const normalized = normalizeUser(userData);
+    storageUtils.saveUser(normalized);
     storageUtils.saveToken(tokens.access_token);
     storageUtils.saveRefreshToken(tokens.refresh_token);
-    setUser(userData);
+    setUser(normalized);
     setIsAuthenticated(true);
     resetAuthRedirectLock();
   };
@@ -98,7 +104,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedData) => {
-    const newUser = { ...user, ...updatedData };
+    const newUser = normalizeUser({ ...user, ...updatedData });
     storageUtils.saveUser(newUser);
     setUser(newUser);
   };
