@@ -12,6 +12,7 @@ import SessionToast from './components/ui/SessionToast';
 
 // Páginas
 import LoginPage from './pages/LoginPage';
+import GoogleCallbackPage from './pages/GoogleCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import PACIPage from './pages/PACIPage';
@@ -109,6 +110,7 @@ const AppContent = () => {
     <Routes>
       {/* Ruta pública */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<GoogleCallbackPage />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
       {/* Rutas protegidas */}

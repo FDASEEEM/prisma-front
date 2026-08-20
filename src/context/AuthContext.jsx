@@ -3,9 +3,10 @@
  * Contexto para manejar estado de autenticación a nivel global
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import storageUtils from '../utils/localStorage';
 import { resetAuthRedirectLock } from '../services/authSession';
+import authService from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -13,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const refreshingRef = useRef(false);
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
   const isSuperAdmin = user?.role === 'SUPERADMIN';
 
@@ -20,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = storageUtils.getUser();
     if (storedUser && storageUtils.getToken()) {
-      setUser(storedUser);
+      setUser(normalizeUser(storedUser));
       setIsAuthenticated(true);
       resetAuthRedirectLock();
     }
@@ -41,14 +43,35 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    const checkToken = () => {
+    const clearSessionAndRedirect = () => {
+      storageUtils.clearSession();
+      setUser(null);
+      setIsAuthenticated(false);
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
+    };
+
+    const checkToken = async () => {
       const token = storageUtils.getToken();
-      if (token && isTokenExpired(token)) {
-        storageUtils.clearSession();
-        setUser(null);
-        setIsAuthenticated(false);
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.replace('/login');
+      const expired = token ? isTokenExpired(token) : null;
+      if (token && expired && !refreshingRef.current) {
+        refreshingRef.current = true;
+        try {
+          const refreshToken = storageUtils.getRefreshToken();
+          if (!refreshToken) {
+            clearSessionAndRedirect();
+            return;
+          }
+          const newTokens = await authService.refreshToken(refreshToken);
+          storageUtils.saveToken(newTokens.access_token);
+          if (newTokens.refresh_token) {
+            storageUtils.saveRefreshToken(newTokens.refresh_token);
+          }
+        } catch (err) {
+          clearSessionAndRedirect();
+        } finally {
+          refreshingRef.current = false;
         }
       }
     };
@@ -58,11 +81,17 @@ export const AuthProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const normalizeUser = (u) => {
+    if (!u) return u;
+    return { ...u, nombre: u.nombre || u.nombreCompleto || '' };
+  };
+
   const login = (userData, tokens) => {
-    storageUtils.saveUser(userData);
+    const normalized = normalizeUser(userData);
+    storageUtils.saveUser(normalized);
     storageUtils.saveToken(tokens.access_token);
     storageUtils.saveRefreshToken(tokens.refresh_token);
-    setUser(userData);
+    setUser(normalized);
     setIsAuthenticated(true);
     resetAuthRedirectLock();
   };
@@ -75,7 +104,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedData) => {
-    const newUser = { ...user, ...updatedData };
+    const newUser = normalizeUser({ ...user, ...updatedData });
     storageUtils.saveUser(newUser);
     setUser(newUser);
   };

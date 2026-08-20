@@ -52,6 +52,18 @@ const authService = {
   },
 
   /**
+   * Get Google Auth URL - Obtiene la URL de autorización de Google (vía BFF)
+   */
+  getGoogleAuthUrl: async () => {
+    try {
+      const data = await bffApi.getGoogleAuthUrl();
+      return data.url;
+    } catch (error) {
+      throw new Error(error.message || 'Error al iniciar sesión con Google');
+    }
+  },
+
+  /**
    * Logout - Invalida la sesión en el servidor
    */
   logout: async () => {

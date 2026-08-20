@@ -60,6 +60,26 @@ const bffApi = {
     }
   },
 
+  getGoogleAuthUrl: async () => {
+    try {
+      const api = createBffApi();
+      const response = await api.post('/api/auth/google/url');
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al iniciar sesión con Google'));
+    }
+  },
+
+  refresh: async (refreshToken) => {
+    try {
+      const api = createBffApi();
+      const response = await api.post('/api/auth/refresh', { refreshToken });
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al renovar sesión'));
+    }
+  },
+
   logout: async () => {
     try {
       const api = createBffApi();

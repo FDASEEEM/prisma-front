@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input, Button, Alert, Spinner } from '../components';
 import authService from '../services/authService';
+import { getHomePathForRole } from '../utils/roleNavigation';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -54,16 +55,26 @@ const LoginPage = () => {
     try {
       const response = await authService.login(email, password);
       login(response.user, response.tokens);
-      const role = response.user?.role;
-      if (role === 'SUPERADMIN') {
-        navigate('/colegios');
-      } else if (role === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate(getHomePathForRole(response.user?.role));
     } catch (error) {
       setApiError(error.message || 'Error al iniciar sesión. Intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setApiError(null);
+    setIsLoading(true);
+
+    try {
+      const url = await authService.getGoogleAuthUrl();
+      if (!url) {
+        throw new Error('No se pudo obtener la URL de Google');
+      }
+      window.location.href = url;
+    } catch (error) {
+      setApiError(error.message || 'Error al iniciar sesión con Google.');
     } finally {
       setIsLoading(false);
     }
@@ -189,6 +200,25 @@ const LoginPage = () => {
                 {isLoading ? 'Ingresando...' : 'Ingresar a mi Aula'}
               </Button>
             </form>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 border-t border-outline-variant/20"></div>
+              <span className="text-sm text-on-surface-variant">o</span>
+              <div className="flex-1 border-t border-outline-variant/20"></div>
+            </div>
+
+            {/* Google Login Button */}
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              size="lg"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+            >
+              Continuar con Google
+            </Button>
 
             {/* Sign Up Link */}
             <div className="mt-8 text-center">
