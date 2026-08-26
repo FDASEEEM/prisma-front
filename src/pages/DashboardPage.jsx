@@ -33,35 +33,27 @@ const DashboardPage = () => {
         setLoading(true);
         setError(null);
 
-        const mockStats = {
-          totalStudents: 12,
-          activePACIs: 5,
-          completedAdaptations: 23,
-          pendingReview: 2,
-        };
+        const [studentsData, paciProfilesData, jobsData, announcementsData] = await Promise.allSettled([
+          dashboardService.getStudents(),
+          dashboardService.getPaciProfiles(),
+          dashboardService.getRecentJobs(1, 5),
+          adminPanelService.getActiveAnnouncements(),
+        ]);
 
-        const mockStudents = [
-          { id: 1, name: 'Pablo Rodríguez', nee: 'Dislexia', lastUpdated: '2025-04-15' },
-          { id: 2, name: 'María García', nee: 'Discalculia', lastUpdated: '2025-04-14' },
-          { id: 3, name: 'Juan López', nee: 'TDAH', lastUpdated: '2025-04-12' },
-        ];
+        const studentsList = studentsData.status === 'fulfilled' ? studentsData.value : [];
+        const paciProfiles = paciProfilesData.status === 'fulfilled' ? paciProfilesData.value : [];
+        const jobs = jobsData.status === 'fulfilled' ? jobsData.value : [];
+        const activeAnnouncements = announcementsData.status === 'fulfilled' ? announcementsData.value : [];
 
-        const mockMaterials = [
-          { id: 1, title: 'Matemáticas - Fracciones', date: '2025-04-16', students: 3 },
-          { id: 2, title: 'Lenguaje - Comprensión Lectora', date: '2025-04-15', students: 5 },
-          { id: 3, title: 'Ciencias - Sistema Digestivo', date: '2025-04-14', students: 2 },
-        ];
+        setStats({
+          totalStudents: Array.isArray(studentsList) ? studentsList.length : 0,
+          activePACIs: Array.isArray(paciProfiles) ? paciProfiles.filter(p => p.isActive).length : 0,
+          completedAdaptations: Array.isArray(jobs) ? jobs.filter(j => j.status === 'completed').length : 0,
+          pendingReview: Array.isArray(jobs) ? jobs.filter(j => j.status === 'pending_review' || j.status === 'pending').length : 0,
+        });
 
-        let activeAnnouncements = [];
-        try {
-          activeAnnouncements = await adminPanelService.getActiveAnnouncements();
-        } catch (err) {
-          console.warn('No se pudieron cargar anuncios:', err.message);
-        }
-
-        setStats(mockStats);
-        setStudents(mockStudents);
-        setMaterials(mockMaterials);
+        setStudents(Array.isArray(studentsList) ? studentsList.slice(0, 5) : []);
+        setMaterials(Array.isArray(jobs) ? jobs.slice(0, 5) : []);
         setAnnouncements(Array.isArray(activeAnnouncements) ? activeAnnouncements : []);
       } catch (err) {
         setError(err.message || 'Error al cargar datos del dashboard');
@@ -207,8 +199,8 @@ const DashboardPage = () => {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Nombre</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">NEE</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Última actualización</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">RUT</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Estado</th>
                     <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600">Acción</th>
                   </tr>
                 </thead>
@@ -216,11 +208,17 @@ const DashboardPage = () => {
                   {students.length > 0 ? (
                     students.map((student) => (
                       <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-gray-900">{student.name}</td>
-                        <td className="py-3 px-4">
-                          <Badge variant="info">{student.nee}</Badge>
+                        <td className="py-3 px-4 font-semibold text-gray-900">
+                          {student.nombre || student.name || 'Sin nombre'}
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{student.lastUpdated}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {student.rut || 'Sin RUT'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant={student.active !== false ? 'success' : 'warning'}>
+                            {student.active !== false ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </td>
                         <td className="py-3 px-4 text-right">
                           <button className="text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors">
                             Ver →
@@ -252,14 +250,16 @@ const DashboardPage = () => {
                 <Card key={material.id} variant="elevated">
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 mb-2 font-body">
-                      {material.title}
+                      {material.title || material.name || material.fileName || 'Sin título'}
                     </h3>
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                      <span>{material.date}</span>
-                      <Badge variant="success">{material.students} estudiantes</Badge>
+                      <span>{material.createdAt ? new Date(material.createdAt).toLocaleDateString('es-CL') : 'Sin fecha'}</span>
+                      <Badge variant={material.status === 'completed' ? 'success' : material.status === 'failed' ? 'error' : 'info'}>
+                        {material.status === 'completed' ? 'Completado' : material.status === 'failed' ? 'Error' : material.status === 'processing' ? 'Procesando' : material.status || 'Pendiente'}
+                      </Badge>
                     </div>
                     <button className="w-full text-primary-600 hover:text-primary-700 font-semibold transition-colors">
-                      Descargar →
+                      {material.status === 'completed' ? 'Descargar →' : 'Ver estado →'}
                     </button>
                   </div>
                 </Card>

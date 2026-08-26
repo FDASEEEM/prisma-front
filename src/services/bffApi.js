@@ -278,6 +278,52 @@ const bffApi = {
       throw new Error(getMessage(error, 'Error al obtener dashboard del colegio'));
     }
   },
+
+  // Students
+  getStudents: async (params) => {
+    try {
+      const api = createBffApi();
+      const response = await api.get('/api/students', { params });
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener estudiantes'));
+    }
+  },
+
+  getPaciProfiles: async (filters = {}) => {
+    try {
+      const api = createBffApi();
+      const params = new URLSearchParams();
+      if (filters.studentId) params.append('studentId', filters.studentId);
+      if (filters.isActive !== undefined) params.append('isActive', filters.isActive);
+      if (filters.curso) params.append('curso', filters.curso);
+      const response = await api.get(`/api/students/paci-profiles/all?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener perfiles PACI'));
+    }
+  },
+
+  // Jobs
+  getJobs: async (params) => {
+    try {
+      const api = createBffApi();
+      const response = await api.get('/api/jobs', { params });
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener trabajos'));
+    }
+  },
+
+  getJobsHistory: async () => {
+    try {
+      const api = createBffApi();
+      const response = await api.get('/api/jobs/history');
+      return response.data;
+    } catch (error) {
+      throw new Error(getMessage(error, 'Error al obtener historial'));
+    }
+  },
 };
 
 export default bffApi;

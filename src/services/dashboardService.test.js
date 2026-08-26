@@ -1,163 +1,108 @@
 /**
  * dashboardService.test.js
  * Pruebas unitarias para el servicio del dashboard
- * Cobertura: 100%
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import dashboardService from './dashboardService';
-import api from './api';
+import bffApi from './bffApi';
 
-// Mock api
-vi.mock('./api');
+vi.mock('./bffApi', () => ({
+  default: {
+    getUserDashboard: vi.fn(),
+    getStudents: vi.fn(),
+    getPaciProfiles: vi.fn(),
+    getJobs: vi.fn(),
+    getJobsHistory: vi.fn(),
+  },
+}));
 
 describe('dashboardService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  describe('getUserDashboard', () => {
+    it('debe retornar el dashboard del usuario', async () => {
+      const mockDashboard = { user: { id: '1' }, recentJobs: [], timestamp: '2025-01-01' };
+      bffApi.getUserDashboard.mockResolvedValueOnce(mockDashboard);
 
-  describe('getDashboardStats', () => {
-    it('debe obtener estadísticas del dashboard', async () => {
-      const mockStats = {
-        totalStudents: 25,
-        totalPACIs: 15,
-        completedSessions: 42,
-        pending: 3,
-      };
-      api.get.mockResolvedValueOnce({ data: mockStats });
+      const result = await dashboardService.getUserDashboard();
 
-      const result = await dashboardService.getDashboardStats();
-
-      expect(result).toEqual(mockStats);
-      expect(api.get).toHaveBeenCalledWith('/api/dashboard/stats');
-    });
-
-    it('debe manejar errores al obtener estadísticas', async () => {
-      api.get.mockRejectedValueOnce({
-        response: { data: { message: 'Error en servidor' } },
-      });
-
-      await expect(dashboardService.getDashboardStats()).rejects.toThrow(
-        'Error en servidor'
-      );
-    });
-
-    it('debe usar mensaje por defecto si no hay respuesta', async () => {
-      api.get.mockRejectedValueOnce({ response: { data: {} } });
-
-      await expect(dashboardService.getDashboardStats()).rejects.toThrow(
-        'Error al obtener estadísticas'
-      );
+      expect(result).toEqual(mockDashboard);
+      expect(bffApi.getUserDashboard).toHaveBeenCalledOnce();
     });
   });
 
   describe('getStudents', () => {
-    it('debe obtener lista de estudiantes', async () => {
-      const mockStudents = {
-        students: [{ id: '1', nombre: 'Student 1' }],
-        total: 1,
-      };
-      api.get.mockResolvedValueOnce({ data: mockStudents });
+    it('debe retornar la lista de estudiantes', async () => {
+      const mockStudents = [{ id: '1', nombre: 'Student 1' }];
+      bffApi.getStudents.mockResolvedValueOnce(mockStudents);
 
       const result = await dashboardService.getStudents();
 
       expect(result).toEqual(mockStudents);
-      expect(api.get).toHaveBeenCalledWith('/api/students', {
-        params: { page: 1, limit: 20 },
-      });
+      expect(bffApi.getStudents).toHaveBeenCalledWith({ page: 1, limit: 50 });
     });
 
-    it('debe permitir paginación personalizada', async () => {
-      api.get.mockResolvedValueOnce({ data: { students: [] } });
+    it('debe pasar paginación personalizada', async () => {
+      bffApi.getStudents.mockResolvedValueOnce([]);
 
-      await dashboardService.getStudents(2, 50);
+      await dashboardService.getStudents(2, 10);
 
-      expect(api.get).toHaveBeenCalledWith('/api/students', {
-        params: { page: 2, limit: 50 },
-      });
-    });
-
-    it('debe manejar errores al obtener estudiantes', async () => {
-      api.get.mockRejectedValueOnce({
-        response: { data: { message: 'Acceso denegado' } },
-      });
-
-      await expect(dashboardService.getStudents()).rejects.toThrow('Acceso denegado');
+      expect(bffApi.getStudents).toHaveBeenCalledWith({ page: 2, limit: 10 });
     });
   });
 
-  describe('getStudent', () => {
-    it('debe obtener datos de un estudiante específico', async () => {
-      const mockStudent = {
-        id: 'student_1',
-        nombre: 'Juan Pérez',
-        email: 'juan@example.com',
-      };
-      api.get.mockResolvedValueOnce({ data: mockStudent });
+  describe('getPaciProfiles', () => {
+    it('debe retornar perfiles PACI con filtros por defecto', async () => {
+      const mockProfiles = [{ id: '1', isActive: true }];
+      bffApi.getPaciProfiles.mockResolvedValueOnce(mockProfiles);
 
-      const result = await dashboardService.getStudent('student_1');
+      const result = await dashboardService.getPaciProfiles();
 
-      expect(result).toEqual(mockStudent);
-      expect(api.get).toHaveBeenCalledWith('/api/students/student_1');
+      expect(result).toEqual(mockProfiles);
+      expect(bffApi.getPaciProfiles).toHaveBeenCalledWith({});
     });
 
-    it('debe manejar estudiante no encontrado', async () => {
-      api.get.mockRejectedValueOnce({
-        response: { data: { message: 'Estudiante no encontrado' } },
-      });
+    it('debe pasar filtros al bffApi', async () => {
+      bffApi.getPaciProfiles.mockResolvedValueOnce([]);
 
-      await expect(dashboardService.getStudent('invalid_id')).rejects.toThrow(
-        'Estudiante no encontrado'
-      );
-    });
+      await dashboardService.getPaciProfiles({ isActive: true });
 
-    it('debe usar mensaje por defecto', async () => {
-      api.get.mockRejectedValueOnce({ response: { data: {} } });
-
-      await expect(dashboardService.getStudent('student_1')).rejects.toThrow(
-        'Error al obtener estudiante'
-      );
+      expect(bffApi.getPaciProfiles).toHaveBeenCalledWith({ isActive: true });
     });
   });
 
-  describe('getRecentMaterials', () => {
-    it('debe obtener materiales recientes', async () => {
-      const mockMaterials = {
-        materials: [{ id: '1', titulo: 'Matemáticas' }],
-        total: 1,
-      };
-      api.get.mockResolvedValueOnce({ data: mockMaterials });
+  describe('getRecentJobs', () => {
+    it('debe retornar trabajos recientes con parámetros por defecto', async () => {
+      const mockJobs = [{ id: '1', status: 'completed' }];
+      bffApi.getJobs.mockResolvedValueOnce(mockJobs);
 
-      const result = await dashboardService.getRecentMaterials();
+      const result = await dashboardService.getRecentJobs();
 
-      expect(result).toEqual(mockMaterials);
-      expect(api.get).toHaveBeenCalledWith('/api/materials/recent', {
-        params: { limit: 5 },
-      });
+      expect(result).toEqual(mockJobs);
+      expect(bffApi.getJobs).toHaveBeenCalledWith({ page: 1, limit: 5 });
     });
 
-    it('debe permitir límite personalizado', async () => {
-      api.get.mockResolvedValueOnce({ data: { materials: [] } });
+    it('debe pasar paginación personalizada', async () => {
+      bffApi.getJobs.mockResolvedValueOnce([]);
 
-      await dashboardService.getRecentMaterials(10);
+      await dashboardService.getRecentJobs(2, 10);
 
-      expect(api.get).toHaveBeenCalledWith('/api/materials/recent', {
-        params: { limit: 10 },
-      });
+      expect(bffApi.getJobs).toHaveBeenCalledWith({ page: 2, limit: 10 });
     });
+  });
 
-    it('debe manejar errores al obtener materiales', async () => {
-      api.get.mockRejectedValueOnce({
-        response: { data: { message: 'Error al acceder a materiales' } },
-      });
+  describe('getJobsHistory', () => {
+    it('debe retornar el historial de trabajos', async () => {
+      const mockHistory = [{ id: '1' }];
+      bffApi.getJobsHistory.mockResolvedValueOnce(mockHistory);
 
-      await expect(dashboardService.getRecentMaterials()).rejects.toThrow(
-        'Error al acceder a materiales'
-      );
+      const result = await dashboardService.getJobsHistory();
+
+      expect(result).toEqual(mockHistory);
+      expect(bffApi.getJobsHistory).toHaveBeenCalledOnce();
     });
   });
 });

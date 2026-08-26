@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DashboardPage from './DashboardPage';
+import dashboardService from '../services/dashboardService';
 import adminPanelService from '../services/adminPanelService';
 
 const mockNavigate = vi.fn();
@@ -31,7 +32,15 @@ vi.mock('../components/ui', () => ({
   Spinner: () => <div data-testid="spinner" />,
 }));
 
-vi.mock('../services/dashboardService', () => ({ default: {} }));
+vi.mock('../services/dashboardService', () => ({
+  default: {
+    getStudents: vi.fn(),
+    getPaciProfiles: vi.fn(),
+    getRecentJobs: vi.fn(),
+    getJobsHistory: vi.fn(),
+  },
+}));
+
 vi.mock('../services/adminPanelService', () => ({
   default: { getActiveAnnouncements: vi.fn() },
 }));
@@ -39,21 +48,52 @@ vi.mock('../services/adminPanelService', () => ({
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dashboardService.getStudents.mockResolvedValue([]);
+    dashboardService.getPaciProfiles.mockResolvedValue([]);
+    dashboardService.getRecentJobs.mockResolvedValue([]);
   });
 
   it('muestra el spinner mientras carga', () => {
-    adminPanelService.getActiveAnnouncements.mockReturnValue(new Promise(() => {}));
+    dashboardService.getStudents.mockReturnValue(new Promise(() => {}));
     render(<DashboardPage />);
     expect(screen.getByTestId('spinner')).toBeInTheDocument();
   });
 
-  it('renderiza saludo, estadísticas y estudiantes recientes', async () => {
+  it('renderiza saludo y estadísticas con datos vacíos', async () => {
     adminPanelService.getActiveAnnouncements.mockResolvedValue([]);
     render(<DashboardPage />);
 
     await waitFor(() => expect(screen.getByText(/¡Hola, Ada!/)).toBeInTheDocument());
-    expect(screen.getByText('12')).toBeInTheDocument(); // totalStudents
-    expect(screen.getByText('Pablo Rodríguez')).toBeInTheDocument();
+    expect(screen.getByText('Estudiantes')).toBeInTheDocument();
+    expect(screen.getByText('PACIs Activos')).toBeInTheDocument();
+    expect(screen.getByText('Adaptaciones')).toBeInTheDocument();
+    expect(screen.getByText('Pendientes')).toBeInTheDocument();
+  });
+
+  it('muestra la tabla vacía de estudiantes cuando no hay datos', async () => {
+    adminPanelService.getActiveAnnouncements.mockResolvedValue([]);
+    render(<DashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('No hay estudiantes registrados')).toBeInTheDocument());
+  });
+
+  it('muestra la sección vacía de materiales cuando no hay datos', async () => {
+    adminPanelService.getActiveAnnouncements.mockResolvedValue([]);
+    render(<DashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('No hay materiales adaptados aún')).toBeInTheDocument());
+  });
+
+  it('renderiza estudiantes reales cuando la API responde', async () => {
+    dashboardService.getStudents.mockResolvedValue([
+      { id: '1', nombre: 'Juan Pérez', rut: '12.345.678-9', active: true },
+    ]);
+    adminPanelService.getActiveAnnouncements.mockResolvedValue([]);
+    render(<DashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Juan Pérez')).toBeInTheDocument());
+    expect(screen.getByText('12.345.678-9')).toBeInTheDocument();
+    expect(screen.getByText('Activo')).toBeInTheDocument();
   });
 
   it('muestra los anuncios activos cuando existen', async () => {
@@ -78,6 +118,16 @@ describe('DashboardPage', () => {
   it('tolera el fallo al cargar anuncios sin romper la página', async () => {
     adminPanelService.getActiveAnnouncements.mockRejectedValue(new Error('sin anuncios'));
     render(<DashboardPage />);
+    await waitFor(() => expect(screen.getByText(/¡Hola, Ada!/)).toBeInTheDocument());
+  });
+
+  it('tolera fallos individuales de la API sin romper el dashboard', async () => {
+    dashboardService.getStudents.mockRejectedValue(new Error('network error'));
+    dashboardService.getPaciProfiles.mockResolvedValue([]);
+    dashboardService.getRecentJobs.mockResolvedValue([]);
+    adminPanelService.getActiveAnnouncements.mockResolvedValue([]);
+    render(<DashboardPage />);
+
     await waitFor(() => expect(screen.getByText(/¡Hola, Ada!/)).toBeInTheDocument());
   });
 });
