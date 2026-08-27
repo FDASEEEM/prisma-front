@@ -181,7 +181,7 @@ describe('AuthContext', () => {
       loginButton.click();
 
       await waitFor(() => {
-        expect(storageUtils.saveUser).toHaveBeenCalledWith(mockUser);
+        expect(storageUtils.saveUser).toHaveBeenCalledWith({ ...mockUser, nombre: '' });
         expect(storageUtils.saveToken).toHaveBeenCalledWith('token');
         expect(storageUtils.saveRefreshToken).toHaveBeenCalledWith('refresh');
       });
