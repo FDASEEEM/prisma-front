@@ -217,47 +217,6 @@ const bffApi = {
     }
   },
 
-  // Professors
-  getProfessors: async (params) => {
-    try {
-      const api = createBffApi();
-      const response = await api.get('/api/professors', { params });
-      return response.data;
-    } catch (error) {
-      throw new Error(getMessage(error, 'Error al obtener profesores'));
-    }
-  },
-
-  createProfessor: async (data) => {
-    try {
-      const api = createBffApi();
-      const response = await api.post('/api/professors', data);
-      return response.data;
-    } catch (error) {
-      throw new Error(getMessage(error, 'Error al crear profesor'));
-    }
-  },
-
-  updateProfessor: async (id, data) => {
-    try {
-      const api = createBffApi();
-      const response = await api.patch(`/api/professors/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw new Error(getMessage(error, 'Error al actualizar profesor'));
-    }
-  },
-
-  deleteProfessor: async (id) => {
-    try {
-      const api = createBffApi();
-      const response = await api.delete(`/api/professors/${id}`);
-      return response.data;
-    } catch (error) {
-      throw new Error(getMessage(error, 'Error al eliminar profesor'));
-    }
-  },
-
   // Dashboard
   getUserDashboard: async () => {
     try {

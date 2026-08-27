@@ -226,37 +226,6 @@ describe('bffApi', () => {
     });
   });
 
-  describe('Professors', () => {
-    it('getProfessors pasa params', async () => {
-      mockInstance.get.mockResolvedValue(ok({ data: [] }));
-      await bffApi.getProfessors({ page: 1 });
-      expect(mockInstance.get).toHaveBeenCalledWith('/api/professors', { params: { page: 1 } });
-    });
-
-    it('createProfessor', async () => {
-      mockInstance.post.mockResolvedValue(ok({ id: 'p1' }));
-      await bffApi.createProfessor({ nombre: 'P' });
-      expect(mockInstance.post).toHaveBeenCalledWith('/api/professors', { nombre: 'P' });
-    });
-
-    it('updateProfessor', async () => {
-      mockInstance.patch.mockResolvedValue(ok({ id: 'p1' }));
-      await bffApi.updateProfessor('p1', { nombre: 'Q' });
-      expect(mockInstance.patch).toHaveBeenCalledWith('/api/professors/p1', { nombre: 'Q' });
-    });
-
-    it('deleteProfessor', async () => {
-      mockInstance.delete.mockResolvedValue(ok({ ok: true }));
-      await bffApi.deleteProfessor('p1');
-      expect(mockInstance.delete).toHaveBeenCalledWith('/api/professors/p1');
-    });
-
-    it('deleteProfessor mapea error por defecto', async () => {
-      mockInstance.delete.mockRejectedValue({});
-      await expect(bffApi.deleteProfessor('p1')).rejects.toThrow('Error al eliminar profesor');
-    });
-  });
-
   describe('Dashboard', () => {
     it('getUserDashboard', async () => {
       mockInstance.get.mockResolvedValue(ok({ stats: {} }));
