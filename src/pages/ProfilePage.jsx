@@ -54,11 +54,8 @@ const ProfilePage = () => {
       setError(null);
       setSuccess(false);
 
-      // En producción, llamar a:
-      // await authService.updateProfile(formData);
-      
-      // Por ahora, actualizar el contexto directamente
-      updateUser(formData);
+      const response = await authService.updateProfile(formData);
+      updateUser(response.data || response);
       setSuccess(true);
       
       setTimeout(() => setSuccess(false), 3000);
