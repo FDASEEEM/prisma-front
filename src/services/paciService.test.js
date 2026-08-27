@@ -12,12 +12,19 @@ const { mockPaciApi } = vi.hoisted(() => ({
     post: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
-    interceptors: { request: { use: vi.fn() } },
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
   },
 }));
 
 vi.mock('axios', () => ({
   default: { create: vi.fn(() => mockPaciApi) },
+}));
+
+vi.mock('./authSession', () => ({
+  handleAuthFailure: vi.fn(),
 }));
 
 import paciService, {
@@ -143,5 +150,16 @@ describe('paciService', () => {
   it('exporta un objeto default con las funciones del servicio', () => {
     expect(typeof paciService.getAllPACIs).toBe('function');
     expect(typeof paciService.deletePACI).toBe('function');
+  });
+
+  it('llama a handleAuthFailure ante un 401', async () => {
+    const { handleAuthFailure } = await import('./authSession');
+    const error401 = { response: { status: 401, data: { message: 'Unauthorized' } }, config: { url: '/api/test' } };
+    mockPaciApi.get.mockRejectedValueOnce(error401);
+    await expect(getAllPACIs()).rejects.toThrow();
+    expect(handleAuthFailure).toHaveBeenCalledWith(
+      { message: 'Unauthorized' },
+      '/api/test',
+    );
   });
 });

@@ -11,12 +11,19 @@ const { mockDocsApi } = vi.hoisted(() => ({
   mockDocsApi: {
     post: vi.fn(),
     get: vi.fn(),
-    interceptors: { request: { use: vi.fn() } },
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
   },
 }));
 
 vi.mock('axios', () => ({
   default: { create: vi.fn(() => mockDocsApi) },
+}));
+
+vi.mock('./authSession', () => ({
+  handleAuthFailure: vi.fn(),
 }));
 
 import jobsService from './jobsService';
@@ -107,5 +114,16 @@ describe('jobsService', () => {
       mockDocsApi.get.mockRejectedValueOnce(new Error('x'));
       await expect(jobsService.getDownloadUrl('job_1')).rejects.toThrow('Error al obtener URL de descarga');
     });
+  });
+
+  it('llama a handleAuthFailure ante un 401', async () => {
+    const { handleAuthFailure } = await import('./authSession');
+    const error401 = { response: { status: 401, data: { message: 'Unauthorized' } }, config: { url: '/api/jobs' } };
+    mockDocsApi.get.mockRejectedValueOnce(error401);
+    await expect(jobsService.listJobs()).rejects.toThrow();
+    expect(handleAuthFailure).toHaveBeenCalledWith(
+      { message: 'Unauthorized' },
+      '/api/jobs',
+    );
   });
 });

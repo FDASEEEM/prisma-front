@@ -1,6 +1,7 @@
 import axios from 'axios';
 import storageUtils from '../utils/localStorage';
 import { JOBS_ENDPOINTS } from '../constants/api';
+import { handleAuthFailure } from './authSession';
 
 const docsApi = axios.create({
   baseURL: import.meta.env.VITE_BFF_URL ?? 'http://localhost:3010',
@@ -13,6 +14,19 @@ docsApi.interceptors.request.use((config) => {
   }
   return config;
 });
+
+docsApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const originalRequest = error.config;
+    const errorResponse = error.response?.data;
+    const requestUrl = originalRequest?.url || '';
+    if (error.response?.status === 401) {
+      handleAuthFailure(errorResponse, requestUrl);
+    }
+    return Promise.reject(error);
+  },
+);
 
 const jobsService = {
   createJob: async (paciFile, planningFile, prompt) => {
