@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import storageUtils from '../utils/localStorage';
+import { handleAuthFailure } from './authSession';
 
 const PACI_BASE_URL = import.meta.env.VITE_BFF_URL ?? 'http://localhost:3010';
 
@@ -20,6 +21,20 @@ paciApi.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Interceptor para manejar sesión expirada (401)
+paciApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const originalRequest = error.config;
+    const errorResponse = error.response?.data;
+    const requestUrl = originalRequest?.url || '';
+    if (error.response?.status === 401) {
+      handleAuthFailure(errorResponse, requestUrl);
+    }
+    return Promise.reject(error);
+  },
+);
 
 /**
  * Obtener todos los perfiles PACI
