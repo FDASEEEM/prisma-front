@@ -51,6 +51,7 @@ server {
     # timeout. Al definir proxy_set_header aquí, NO se heredan los de arriba,
     # así que re-declaramos las cabeceras necesarias.
     location /chat/ {
+        access_log off;
         set $up ${WORKFLOW_UPSTREAM};
         proxy_pass http://$up$request_uri;
         proxy_set_header Host              $host;
@@ -63,10 +64,12 @@ server {
         proxy_read_timeout 1h;
     }
     location /health {
+        access_log off;
         set $up ${WORKFLOW_UPSTREAM};
         proxy_pass http://$up$request_uri;
     }
     location /feedback/ {
+        access_log off;
         set $up ${WORKFLOW_UPSTREAM};
         proxy_pass http://$up$request_uri;
     }
