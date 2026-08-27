@@ -101,7 +101,7 @@ const chatService = {
     try {
       const response = await chatApi.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId));
       const { url } = response.data;
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
       return { success: true };
     } catch (error) {
       if (error.response?.status === 404) {

@@ -4,9 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
+import { Modal, Button, Badge } from '../ui';
 import paciService from '../../services/paciService';
 
 const ViewPACIModal = ({ isOpen, onClose, paciId }) => {

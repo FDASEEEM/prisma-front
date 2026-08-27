@@ -4,9 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Modal, Button, Input } from '../ui';
 import paciService from '../../services/paciService';
 
 const EditPACIModal = ({ isOpen, onClose, onSuccess, paciId }) => {
