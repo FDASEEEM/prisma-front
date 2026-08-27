@@ -246,15 +246,17 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-2 p-1 hover:opacity-80 rounded-full transition-all duration-300"
             >
-              <UserAvatar name={user?.nombre || 'Usuario'} size="sm" />
+              <UserAvatar name={user?.nombre || user?.nombreCompleto || user?.email || 'Usuario'} size="sm" />
             </button>
 
             {/* Profile Dropdown Menu */}
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/15 overflow-hidden z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/15 overflow-hidden z-50">
                 <div className="px-4 py-3 border-b border-outline-variant/15">
-                  <p className="text-sm font-medium text-on-surface">{user?.nombre || 'Usuario'}</p>
-                  <p className="text-xs text-on-surface-variant">{user?.email || 'usuario@ejemplo.com'}</p>
+                  <p className="text-sm font-medium text-on-surface truncate">{user?.nombre || user?.nombreCompleto || 'Usuario'}</p>
+                  {user?.email && (
+                    <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
+                  )}
                 </div>
                 <button
                   onClick={handleProfileClick}

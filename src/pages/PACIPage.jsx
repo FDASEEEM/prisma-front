@@ -8,13 +8,27 @@ import { MainContainer, Button, Card, Badge, Spinner, Alert } from '../component
 import CreatePACIModal from '../components/features/CreatePACIModal';
 import EditPACIModal from '../components/features/EditPACIModal';
 import ViewPACIModal from '../components/features/ViewPACIModal';
+import NoColegioNotice from '../components/features/NoColegioNotice';
 import paciService from '../services/paciService';
+import { isNoColegioError, getApiErrorMessage } from '../utils/apiError';
 
 const PACIPage = () => {
   const [activeTab, setActiveTab] = useState('activos');
   const [pacis, setPacis] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [noColegio, setNoColegio] = useState(false);
+  const [noColegioMsg, setNoColegioMsg] = useState('');
+
+  // Docente sin colegio asignado → aviso amable en vez del error 403 crudo.
+  const handleApiError = (err, fallback) => {
+    if (isNoColegioError(err)) {
+      setNoColegio(true);
+      setNoColegioMsg(getApiErrorMessage(err, ''));
+      return;
+    }
+    setError(getApiErrorMessage(err, fallback));
+  };
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -41,6 +55,7 @@ const PACIPage = () => {
   const loadPACIs = async () => {
     setLoading(true);
     setError(null);
+    setNoColegio(false);
     try {
       let data;
       switch (activeTab) {
@@ -58,7 +73,7 @@ const PACIPage = () => {
       }
       setPacis(Array.isArray(data) ? data : (data?.data ?? data?.items ?? []));
     } catch (err) {
-      setError(err.message || 'Error al cargar perfiles PACI');
+      handleApiError(err, 'Error al cargar perfiles PACI');
     } finally {
       setLoading(false);
     }
@@ -78,7 +93,7 @@ const PACIPage = () => {
       const data = await paciService.getAllPACIs(filterData);
       setPacis(Array.isArray(data) ? data : (data?.data ?? data?.items ?? []));
     } catch (err) {
-      setError(err.message || 'Error al filtrar perfiles PACI');
+      handleApiError(err, 'Error al filtrar perfiles PACI');
     } finally {
       setLoading(false);
     }
@@ -110,7 +125,7 @@ const PACIPage = () => {
       await paciService.deletePACI(id);
       loadPACIs();
     } catch (err) {
-      setError(err.message || 'Error al eliminar perfil PACI');
+      handleApiError(err, 'Error al eliminar perfil PACI');
     }
   };
 
@@ -137,18 +152,25 @@ const PACIPage = () => {
               Gestión de Planes de Adaptación Curricular Individualizado
             </p>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            + Nuevo PACI
-          </Button>
+          {!noColegio && (
+            <Button onClick={() => setShowCreateModal(true)}>
+              + Nuevo PACI
+            </Button>
+          )}
         </div>
 
+        {/* Docente sin colegio asignado */}
+        {noColegio && <NoColegioNotice message={noColegioMsg} />}
+
         {/* Error Alert */}
-        {error && (
+        {!noColegio && error && (
           <Alert variant="error">
             {error}
           </Alert>
         )}
 
+        {!noColegio && (
+        <>
         {/* Tabs */}
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8">
@@ -304,6 +326,8 @@ const PACIPage = () => {
               </table>
             </div>
           </Card>
+        )}
+        </>
         )}
       </div>
 

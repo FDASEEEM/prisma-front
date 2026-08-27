@@ -12,7 +12,7 @@ const chatApi = axios.create({
   baseURL: import.meta.env.VITE_CHAT_API_URL ?? '',
 });
 
-// Inyectar el JWT de Supabase en cada request al backend de agentes
+// Inyectar el JWT de Cognito en cada request al backend de agentes
 chatApi.interceptors.request.use(
   (config) => {
     const token = storageUtils.getToken();

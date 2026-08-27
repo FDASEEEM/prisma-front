@@ -17,7 +17,10 @@ vi.mock('../services/authSession', () => ({
   resetAuthRedirectLock: vi.fn(),
 }));
 vi.mock('../services/authService', () => ({
-  default: { refreshToken: vi.fn() },
+  default: {
+    refreshToken: vi.fn(),
+    getCurrentUser: vi.fn().mockResolvedValue(null),
+  },
 }));
 
 describe('AuthContext', () => {

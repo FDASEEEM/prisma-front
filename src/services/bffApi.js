@@ -10,6 +10,9 @@ const createBffApi = () => {
     headers: {
       'Content-Type': 'application/json',
     },
+    // El login con Google necesita que el navegador guarde/envíe la cookie
+    // `prisma_oauth_state` que emite el BFF (validación anti-CSRF del state).
+    withCredentials: true,
   });
 
   bffApi.interceptors?.request?.use?.((config) => {

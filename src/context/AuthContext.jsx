@@ -25,9 +25,33 @@ export const AuthProvider = ({ children }) => {
       setUser(normalizeUser(storedUser));
       setIsAuthenticated(true);
       resetAuthRedirectLock();
+      // Rehidratar el perfil desde el backend: el blob guardado puede ser viejo
+      // o incompleto (p. ej. un login anterior que no traía nombre/correo).
+      syncProfile();
     }
     setIsLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Trae el perfil autoritativo desde `GET /api/auth/me` y lo fusiona con el
+   * usuario en memoria/almacenamiento. Silencioso ante errores de red: si falla,
+   * se conserva lo que ya había.
+   */
+  const syncProfile = async () => {
+    if (!storageUtils.getToken()) return;
+    try {
+      const fresh = await authService.getCurrentUser();
+      if (!fresh || typeof fresh !== 'object') return;
+      setUser((prev) => {
+        const merged = normalizeUser({ ...(prev || {}), ...fresh });
+        storageUtils.saveUser(merged);
+        return merged;
+      });
+    } catch {
+      // sin conexión / 5xx: mantenemos el usuario actual
+    }
+  };
 
   // Verificar expiración del token periódicamente (cada 60s)
   useEffect(() => {
@@ -94,6 +118,9 @@ export const AuthProvider = ({ children }) => {
     setUser(normalized);
     setIsAuthenticated(true);
     resetAuthRedirectLock();
+    // Confirmar/completar el perfil contra el backend (nombre y correo reales
+    // de la cuenta, por si el payload de login venía incompleto).
+    syncProfile();
   };
 
   const logout = () => {
@@ -119,6 +146,7 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       updateUser,
+      syncProfile,
     }}>
       {children}
     </AuthContext.Provider>
