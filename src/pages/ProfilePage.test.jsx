@@ -36,7 +36,10 @@ vi.mock('../components/ui', () => ({
 }));
 
 vi.mock('../services/authService', () => ({
-  default: { logout: vi.fn().mockResolvedValue({}) },
+  default: {
+    logout: vi.fn().mockResolvedValue({}),
+    updateProfile: vi.fn().mockResolvedValue({ data: { nombre: 'Ada Lovelace', email: 'ada@test.cl', institucion: 'Colegio Andes' } }),
+  },
 }));
 
 describe('ProfilePage', () => {
@@ -50,17 +53,18 @@ describe('ProfilePage', () => {
     expect(screen.getByLabelText('Correo Electrónico')).toHaveValue('ada@test.cl');
   });
 
-  it('guarda los cambios actualizando el contexto y muestra éxito', async () => {
+  it('guarda los cambios llamando a updateProfile y actualizando el contexto', async () => {
     render(<ProfilePage />);
     fireEvent.change(screen.getByLabelText(/Institución Educativa/i), {
       target: { name: 'institucion', value: 'Colegio Andes' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
 
-    await waitFor(() => expect(mockUpdateUser).toHaveBeenCalled());
-    expect(mockUpdateUser).toHaveBeenCalledWith(
+    await waitFor(() => expect(authService.updateProfile).toHaveBeenCalled());
+    expect(authService.updateProfile).toHaveBeenCalledWith(
       expect.objectContaining({ institucion: 'Colegio Andes' }),
     );
+    await waitFor(() => expect(mockUpdateUser).toHaveBeenCalled());
     expect(screen.getByText(/Perfil actualizado correctamente/i)).toBeInTheDocument();
   });
 
