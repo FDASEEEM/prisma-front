@@ -271,9 +271,7 @@ const AdminPanelPage = () => {
         ...(startsAtDate ? { startsAt: startsAtDate.toISOString() } : {}),
         ...(endsAtDate ? { endsAt: endsAtDate.toISOString() } : {}),
       };
-      console.log('Creando anuncio con payload:', payload);
       const result = await adminPanelService.createAnnouncement(payload);
-      console.log('Anuncio creado:', result);
       setAnnouncements((prev) => [result.data || result, ...prev]);
       setAnnouncementForm(emptyAnnouncementForm);
       showToast('Anuncio creado correctamente');

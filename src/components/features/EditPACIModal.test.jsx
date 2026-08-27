@@ -9,21 +9,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import EditPACIModal from './EditPACIModal';
 import paciService from '../../services/paciService';
 
-vi.mock('../ui/Modal', () => ({
-  default: ({ isOpen, title, children }) =>
+vi.mock('../ui', () => ({
+  Modal: ({ isOpen, title, children }) =>
     isOpen ? (
       <div role="dialog" aria-label={title}>
         {children}
       </div>
     ) : null,
-}));
-vi.mock('../ui/Button', () => ({
-  default: ({ children, loading, variant, size, ...props }) => (
+  Button: ({ children, loading, variant, size, ...props }) => (
     <button {...props}>{children}</button>
   ),
-}));
-vi.mock('../ui/Input', () => ({
-  default: ({ label, error, ...props }) => <input aria-label={label} {...props} />,
+  Input: ({ label, error, ...props }) => <input aria-label={label} {...props} />,
 }));
 
 vi.mock('../../services/paciService', () => ({

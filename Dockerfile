@@ -32,7 +32,7 @@ COPY . .
 # IMPORTANTE: el código usa VITE_BFF_URL (toda la API pasa por el BFF) y
 # VITE_CHAT_API_URL (workflow). Deben quedar vacías para que axios use baseURL
 # relativo same-origin (ver resolución con `??` en los services/constants).
-RUN printf 'VITE_BFF_URL=\nVITE_CHAT_API_URL=\nVITE_DOCS_API_URL=\n' > .env.production
+RUN printf 'VITE_BFF_URL=\nVITE_CHAT_API_URL=\n' > .env.production
 
 RUN npm run build
 

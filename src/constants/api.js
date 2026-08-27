@@ -5,7 +5,6 @@
  */
 
 const BFF_BASE_URL = import.meta.env.VITE_BFF_URL ?? 'http://localhost:3010';
-const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000';
 const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? '';
 
 export const AUTH_ENDPOINTS = {
@@ -57,7 +56,7 @@ export const ADMIN_ENDPOINTS = {
   SESSIONS_HISTORICAL: `${BFF_BASE_URL}/api/admin/sessions/historical`,
   SESSIONS_BLOCKED: `${BFF_BASE_URL}/api/admin/sessions/blocked`,
   SESSIONS_BY_USER: (userId) => `${BFF_BASE_URL}/api/admin/sessions/user/${userId}`,
-  SESSION: (id) => `${BFF_BASE_URL}/api/admin/sessions`,
+  SESSION: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}`,
   SESSION_BLOCK: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}/block`,
   SESSION_UNBLOCK: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}/unblock`,
   SESSION_TERMINATE: (id) => `${BFF_BASE_URL}/api/admin/sessions/${id}/terminate`,

@@ -5,9 +5,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Modal, Button, Input } from '../ui';
 import paciService from '../../services/paciService';
 
 const COURSE_OPTIONS = [

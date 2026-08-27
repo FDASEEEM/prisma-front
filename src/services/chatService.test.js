@@ -169,7 +169,7 @@ describe('chatService', () => {
       const result = await chatService.downloadResult('session_123');
 
       expect(result).toEqual({ success: true });
-      expect(window.open).toHaveBeenCalledWith(mockUrl, '_blank');
+      expect(window.open).toHaveBeenCalledWith(mockUrl, '_blank', 'noopener,noreferrer');
     });
 
     it('debe lanzar error si archivo no existe (404)', async () => {

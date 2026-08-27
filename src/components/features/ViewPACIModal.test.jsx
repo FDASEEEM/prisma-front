@@ -8,21 +8,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import ViewPACIModal from './ViewPACIModal';
 import paciService from '../../services/paciService';
 
-vi.mock('../ui/Modal', () => ({
-  default: ({ isOpen, title, children }) =>
+vi.mock('../ui', () => ({
+  Modal: ({ isOpen, title, children }) =>
     isOpen ? (
       <div role="dialog" aria-label={title}>
         {children}
       </div>
     ) : null,
-}));
-vi.mock('../ui/Button', () => ({
-  default: ({ children, loading, variant, size, ...props }) => (
+  Button: ({ children, loading, variant, size, ...props }) => (
     <button {...props}>{children}</button>
   ),
-}));
-vi.mock('../ui/Badge', () => ({
-  default: ({ children }) => <span data-testid="badge">{children}</span>,
+  Badge: ({ children }) => <span data-testid="badge">{children}</span>,
 }));
 
 vi.mock('../../services/paciService', () => ({
