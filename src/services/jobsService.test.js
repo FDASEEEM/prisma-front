@@ -28,6 +28,11 @@ vi.mock('./authSession', () => ({
 
 import jobsService from './jobsService';
 
+// Se captura apenas se importa el servicio: interceptors.response.use solo se
+// llama una vez, en import-time, y vi.clearAllMocks() en cada beforeEach
+// borraría este historial de llamadas si se leyera más tarde.
+const onRejected401 = mockDocsApi.interceptors.response.use.mock.calls[0][1];
+
 describe('jobsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -116,14 +121,17 @@ describe('jobsService', () => {
     });
   });
 
-  it('llama a handleAuthFailure ante un 401', async () => {
-    const { handleAuthFailure } = await import('./authSession');
-    const error401 = { response: { status: 401, data: { message: 'Unauthorized' } }, config: { url: '/api/jobs' } };
-    mockDocsApi.get.mockRejectedValueOnce(error401);
-    await expect(jobsService.listJobs()).rejects.toThrow();
-    expect(handleAuthFailure).toHaveBeenCalledWith(
-      { message: 'Unauthorized' },
-      '/api/jobs',
-    );
+  describe('interceptor 401', () => {
+    const onRejected = onRejected401;
+
+    it('llama a handleAuthFailure ante un 401', async () => {
+      const { handleAuthFailure } = await import('./authSession');
+      const err = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: { url: '/api/jobs' },
+      };
+      await expect(onRejected(err)).rejects.toBe(err);
+      expect(handleAuthFailure).toHaveBeenCalledWith({ message: 'Unauthorized' }, '/api/jobs');
+    });
   });
 });
