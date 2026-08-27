@@ -70,7 +70,8 @@ implementado, no es un objetivo pendiente:
 - **JWT**: se guarda en `localStorage` vía `utils/localStorage.js` (`prisma_access_token`,
   `prisma_refresh_token`, `prisma_user`) y se inyecta como `Authorization: Bearer` en cada instancia de
   Axios. `AuthContext` decodifica el JWT (payload base64, sin verificar firma) para chequear expiración
-  cada 60s; si expiró, limpia sesión y redirige a `/login`. `services/authSession.js` centraliza el
+  cada 60s; si expiró intenta renovarlo con el refresh token (`authService.refreshToken`) y solo si el
+  refresh falla limpia sesión y redirige a `/login`. `services/authSession.js` centraliza el
   redirect-a-login en 401 (`handleAuthFailure`) con un lock (`redirectInProgress`) para no disparar
   múltiples redirects si varias llamadas fallan a la vez, y evita loops si el 401 vino del propio
   `/api/auth/login`.
@@ -162,12 +163,11 @@ proyecto).
 
 ## 9. Gotchas / cosas no obvias
 
-- **`authService.refreshToken` está roto en el código real**: llama `bffApi.refresh(refreshToken)`
-  (`src/services/authService.js:73`), pero `bffApi.js` **no exporta ningún método `refresh`** — solo lo
-  simula el mock en `authService.test.js`. Además `refreshToken` nunca se invoca desde ningún componente
-  de la app (solo desde el test). En la práctica no hay renovación automática de token: cuando expira,
-  `AuthContext` simplemente cierra sesión y redirige a `/login`. Si vas a implementar refresh real, hay
-  que agregar `refresh` a `bffApi.js` primero.
+- **Refresh de token implementado**: `authService.refreshToken` (`src/services/authService.js:73`) llama
+  `bffApi.refresh(refreshToken)` → `POST /api/auth/refresh`, que ya está exportado en `bffApi.js`.
+  `AuthContext` hace renovación automática: cada 60s decodifica el access token y si `exp` pasó, intenta
+  refrescar con el refresh token guardado; si el refresh falla (o no hay refresh token), limpia sesión y
+  redirige a `/login`.
 - **`README.md` es boilerplate de Create React App sin actualizar** (dice `npm start` levanta en :3000,
   menciona `eject`, etc.). No refleja la realidad del proyecto (Vite, :3002). No confiar en él.
 - **`services/index.js` es un barrel incompleto**: solo re-exporta `authService`, `dashboardService`,

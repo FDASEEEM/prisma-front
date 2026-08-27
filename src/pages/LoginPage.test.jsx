@@ -21,7 +21,7 @@ vi.mock('../context/AuthContext', () => ({
 }));
 
 vi.mock('../services/authService', () => ({
-  default: { login: vi.fn() },
+  default: { login: vi.fn(), getGoogleAuthUrl: vi.fn() },
 }));
 
 vi.mock('../components', () => ({
@@ -111,6 +111,34 @@ describe('LoginPage', () => {
 
     await waitFor(() =>
       expect(screen.getByText('Credenciales inválidas')).toBeInTheDocument(),
+    );
+  });
+
+  it('solicita la URL de Google al hacer clic en Continuar con Google', async () => {
+    authService.getGoogleAuthUrl.mockResolvedValue('https://google.com/auth');
+    render(<LoginPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: /Continuar con Google/i }),
+    );
+
+    await waitFor(() =>
+      expect(authService.getGoogleAuthUrl).toHaveBeenCalled(),
+    );
+  });
+
+  it('muestra error si falla al obtener la URL de Google', async () => {
+    authService.getGoogleAuthUrl.mockRejectedValue(
+      new Error('Error al iniciar sesión con Google'),
+    );
+    render(<LoginPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: /Continuar con Google/i }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Error al iniciar sesión con Google'),
+      ).toBeInTheDocument(),
     );
   });
 });

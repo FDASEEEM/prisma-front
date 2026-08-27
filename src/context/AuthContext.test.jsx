@@ -9,11 +9,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from './AuthContext';
 import storageUtils from '../utils/localStorage';
+import authService from '../services/authService';
 
 // Mock storageUtils
 vi.mock('../utils/localStorage');
 vi.mock('../services/authSession', () => ({
   resetAuthRedirectLock: vi.fn(),
+}));
+vi.mock('../services/authService', () => ({
+  default: { refreshToken: vi.fn() },
 }));
 
 describe('AuthContext', () => {
@@ -87,6 +91,55 @@ describe('AuthContext', () => {
 
       expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
       expect(screen.getByTestId('user')).toHaveTextContent('no-user');
+    });
+
+    it('debe renovar el token si el access token está expirado', async () => {
+      const expiredToken = `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 }))}.sig`;
+      storageUtils.getUser.mockReturnValueOnce({ id: '1', email: 'test@example.com' });
+      storageUtils.getToken.mockReturnValue(expiredToken);
+      storageUtils.getRefreshToken.mockReturnValue('refresh_viejo');
+      authService.refreshToken.mockResolvedValue({ access_token: 'nuevo', refresh_token: 'nuevoR' });
+
+      const TestComponent = () => {
+        const { isAuthenticated } = useAuth();
+        return <div data-testid="is-authenticated">{String(isAuthenticated)}</div>;
+      };
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(authService.refreshToken).toHaveBeenCalledWith('refresh_viejo');
+        expect(storageUtils.saveToken).toHaveBeenCalledWith('nuevo');
+        expect(storageUtils.saveRefreshToken).toHaveBeenCalledWith('nuevoR');
+        expect(storageUtils.clearSession).not.toHaveBeenCalled();
+      });
+    });
+
+    it('debe cerrar sesión si el refresh falla', async () => {
+      const expiredToken = `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 }))}.sig`;
+      storageUtils.getUser.mockReturnValueOnce({ id: '1', email: 'test@example.com' });
+      storageUtils.getToken.mockReturnValue(expiredToken);
+      storageUtils.getRefreshToken.mockReturnValue('refresh_viejo');
+      authService.refreshToken.mockRejectedValue(new Error('fallo'));
+
+      const TestComponent = () => {
+        const { isAuthenticated } = useAuth();
+        return <div data-testid="is-authenticated">{String(isAuthenticated)}</div>;
+      };
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(storageUtils.clearSession).toHaveBeenCalled();
+      });
     });
   });
 

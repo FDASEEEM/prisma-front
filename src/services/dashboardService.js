@@ -1,61 +1,44 @@
 /**
  * Dashboard Service
- * Funciones para obtener datos del dashboard
+ * Funciones para obtener datos reales del dashboard desde el BFF
  */
 
-import api from './api';
+import bffApi from './bffApi';
 
 const dashboardService = {
   /**
-   * Get Dashboard Stats - Obtiene estadísticas del docente
+   * Get User Dashboard - Obtiene datos del dashboard del usuario autenticado
    */
-  getDashboardStats: async () => {
-    try {
-      const response = await api.get('/api/dashboard/stats');
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener estadísticas');
-    }
+  getUserDashboard: async () => {
+    return bffApi.getUserDashboard();
   },
 
   /**
    * Get Students - Obtiene lista de estudiantes del docente
    */
-  getStudents: async (page = 1, limit = 20) => {
-    try {
-      const response = await api.get('/api/students', {
-        params: { page, limit },
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener estudiantes');
-    }
+  getStudents: async (page = 1, limit = 50) => {
+    return bffApi.getStudents({ page, limit });
   },
 
   /**
-   * Get Student by ID - Obtiene datos de un estudiante específico
+   * Get PACI Profiles - Obtiene perfiles PACI del docente
    */
-  getStudent: async (studentId) => {
-    try {
-      const response = await api.get(`/api/students/${studentId}`);
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener estudiante');
-    }
+  getPaciProfiles: async (filters = {}) => {
+    return bffApi.getPaciProfiles(filters);
   },
 
   /**
-   * Get Recent Materials - Obtiene materiales recientes del docente
+   * Get Recent Jobs - Obtiene trabajos recientes del docente
    */
-  getRecentMaterials: async (limit = 5) => {
-    try {
-      const response = await api.get('/api/materials/recent', {
-        params: { limit },
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener materiales');
-    }
+  getRecentJobs: async (page = 1, limit = 5) => {
+    return bffApi.getJobs({ page, limit });
+  },
+
+  /**
+   * Get Jobs History - Obtiene historial de trabajos
+   */
+  getJobsHistory: async () => {
+    return bffApi.getJobsHistory();
   },
 };
 
