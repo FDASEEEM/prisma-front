@@ -93,7 +93,7 @@ const SoportePage = () => {
                 onClick={() => setPriorityFilter(f.key)}
                 className={`px-3 py-1 text-xs font-bold rounded-full border transition-colors ${
                   priorityFilter === f.key
-                    ? 'bg-stone-900 text-white border-stone-900 dark:bg-stone-50 dark:text-stone-900 dark:border-stone-50'
+                    ? 'bg-lime-500 text-white border-lime-500 dark:bg-lime-400 dark:text-stone-900 dark:border-lime-400'
                     : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-300 dark:border-stone-600'
                 }`}
               >
@@ -175,14 +175,15 @@ const SoportePage = () => {
               value={ticketForm.subject}
               onChange={(e) => setTicketForm((prev) => ({ ...prev, subject: e.target.value }))}
               placeholder="Ej: Error al generar PDF"
+              className="!bg-white dark:!bg-stone-900 !text-stone-900 dark:!text-stone-100 placeholder:!text-stone-400 !border !border-stone-300 dark:!border-stone-700 !rounded-xl focus:!ring-2 focus:!ring-lime-400"
               required
             />
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Prioridad</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Prioridad</label>
               <select
                 value={ticketForm.priority}
                 onChange={(e) => setTicketForm((prev) => ({ ...prev, priority: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-lime-400"
               >
                 <option value="low">Baja</option>
                 <option value="medium">Media</option>
@@ -190,13 +191,13 @@ const SoportePage = () => {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Mensaje</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Mensaje</label>
               <textarea
                 value={ticketForm.message}
                 onChange={(e) => setTicketForm((prev) => ({ ...prev, message: e.target.value }))}
                 placeholder="Describe tu problema con el mayor detalle posible..."
                 rows={4}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
                 required
               />
             </div>
