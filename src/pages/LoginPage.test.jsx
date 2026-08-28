@@ -126,6 +126,25 @@ describe('LoginPage', () => {
     );
   });
 
+  it('muestra "Redirigiendo a Google…" mientras se resuelve el redireccionamiento', async () => {
+    let resolveUrl;
+    authService.getGoogleAuthUrl.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUrl = resolve;
+      }),
+    );
+    render(<LoginPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: /Continuar con Google/i }),
+    );
+
+    expect(
+      await screen.findByRole('button', { name: /Redirigiendo a Google/i }),
+    ).toBeDisabled();
+
+    resolveUrl('https://google.com/auth');
+  });
+
   it('muestra error si falla al obtener la URL de Google', async () => {
     authService.getGoogleAuthUrl.mockRejectedValue(
       new Error('Error al iniciar sesión con Google'),
